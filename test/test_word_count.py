@@ -2,8 +2,8 @@ import unittest
 
 import test_utils
 test_utils.finagle_dependencies()
-import word_count
-from manuscript import Manuscript
+import manuscript_generator_3000.word_count as word_count
+from manuscript_generator_3000.manuscript import Manuscript
 
 
 class TestWordCount(unittest.TestCase):

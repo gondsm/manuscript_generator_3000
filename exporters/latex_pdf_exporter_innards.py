@@ -4,11 +4,11 @@ import subprocess
 import os
 from collections.abc import Iterable
 
-from manuscript import Manuscript
+from ..manuscript import Manuscript
 
 # TODO: this is a bit ugly, maybe the markdown conversion functionality should be in some common utils, so exporters
 # don't need to import one another.
-import markdown_exporter_innards
+from . import markdown_exporter_innards
 
 # Bits of text we need to replace in the template:
 COVER_FILE_LOCATION = "COVER_FILE_HERE"

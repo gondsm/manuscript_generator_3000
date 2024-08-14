@@ -4,7 +4,7 @@ import unittest
 # install the package just to run unit tests.
 import test_utils
 test_utils.finagle_dependencies()
-from manuscript import Manuscript
+from manuscript_generator_3000.manuscript import Manuscript
 
 
 class TestManuscript(unittest.TestCase):

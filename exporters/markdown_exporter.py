@@ -1,7 +1,7 @@
 from pathlib import Path
 
-import markdown_exporter_innards as innards
-from manuscript import Manuscript
+from . import markdown_exporter_innards as innards
+from ..manuscript import Manuscript
 
 
 def export(manuscript: Manuscript, out_file: Path) -> None:

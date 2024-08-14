@@ -1,5 +1,5 @@
-from manuscript import Manuscript
-import latex_pdf_exporter_innards as innards
+from ..manuscript import Manuscript
+from . import latex_pdf_exporter_innards as innards
 
 from pathlib import Path
 

@@ -1,6 +1,6 @@
 import logging
 
-from manuscript import Manuscript
+from ..manuscript import Manuscript
 
 logger = logging.getLogger(__name__)
 

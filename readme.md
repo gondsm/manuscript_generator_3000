@@ -63,7 +63,7 @@ Like any good open-source project, this one has a massive TODO list I'm working 
 - Code quality
 	- [ ] Clean up TODOs in the code (a few are still lurking around)
 	- [x] Break up code into sub-packages
-	- [ ] Clean up path shenanigans
+	- [x] Clean up path shenanigans
 	- [ ] Add (more) unit tests :)
 - Appearance
 	- [ ] Introduce a better cover for when no cover is specified in config.

@@ -1,8 +1,8 @@
 from pathlib import Path
 import logging
 
-import obsidian_kanban_subheading_importer_innards as innards
-from manuscript.manuscript import Manuscript
+from . import obsidian_kanban_subheading_importer_innards as innards
+from ..manuscript import Manuscript
 
 logger = logging.getLogger(__name__)
 

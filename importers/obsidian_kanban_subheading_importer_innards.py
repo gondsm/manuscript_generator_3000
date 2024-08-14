@@ -3,7 +3,7 @@ import logging
 import datetime
 from collections.abc import Iterable
 
-from manuscript import Manuscript
+from ..manuscript import Manuscript
 
 logger = logging.getLogger(__name__)
 

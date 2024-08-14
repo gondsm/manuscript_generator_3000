@@ -2,7 +2,7 @@ import dataclasses
 from pathlib import Path
 from collections.abc import Iterable
 
-from manuscript import Manuscript
+from ..manuscript import Manuscript
 
 # TODO: little bit of portuguese here
 MD_PROLOGUE_SEPARATOR = "## Prólogo {.unnumbered}"
