@@ -2,6 +2,7 @@ from pathlib import Path
 import logging
 import datetime
 from collections.abc import Iterable
+import copy
 
 from ..manuscript import Manuscript
 
@@ -23,6 +24,23 @@ FILENAME_END = "]]"
 # -- config_key: config_value
 CONFIG_START = "- [ ] -- "
 CONFIG_SEPARATOR = ": "
+
+# Part/chapter/etc separator lines can contain inline config
+INLINE_CONFIG_START = " -- "
+INLINE_CONFIG_SEPARATOR = ": "
+
+# Dictionary keys for parsing out separator config
+SEPARATOR_CONFIG_TITLE_KEY = "Title"
+SEPARATOR_CONFIG_NUMBERED_KEY = "Numbered"
+
+# Boolean values for separator config
+# TODO: this seems excessive. There should be a standard way of converting a string to bool following Python rules (like
+# any YAML parser would do, that has to be a thing)
+SEPARATOR_CONFIG_TRUE = "True"
+SEPARATOR_CONFIG_FALSE = "False"
+
+# Default config for separators
+SEPARATOR_CONFIG_DEFAULT = Manuscript.SeparatorConfig("", True)
 
 # And these are the config keys we know about
 AUTHOR_KEY = "Author"
@@ -185,6 +203,54 @@ def extract_global_config(lines: Iterable[str]) -> [Iterable[str], Manuscript.Co
             output.append(line)
 
     return [output, config]
+
+
+def extract_inline_config(line: str) -> dict:
+    """Extracts the config that may exist in part/chapter/etc separators.
+    """
+    output = {}
+
+    # No point in parsing if there's nothing to parse
+    if (INLINE_CONFIG_START not in line):
+        return output
+
+    # Start by erasing any instances of separators from the line
+    trimmed_line = line.replace(PART_INDICATOR, "").replace(CHAPTER_INDICATOR, "")
+
+    # Then we break up the line looking for individual config entries
+    for elem in trimmed_line.split(INLINE_CONFIG_START):
+        if (INLINE_CONFIG_SEPARATOR in elem):
+            key, value = elem.split(INLINE_CONFIG_SEPARATOR)
+
+            if not key or not value:
+                logger.warning("Found a strange empty key or value whilst parsing this line. Skipping line.")
+                logger.warning(f"Element: {elem}")
+                logger.warning(f"Line: {line}")
+                continue
+
+            output[key] = value
+
+    return output
+
+
+def convert_inline_config_to_separator_config(input: dict) -> Manuscript.SeparatorConfig:
+    """Converts a dict containing inline config into a SeparatorConfig object.
+    """
+    output = copy.deepcopy(SEPARATOR_CONFIG_DEFAULT)
+
+    if SEPARATOR_CONFIG_TITLE_KEY in input:
+        output.title = input[SEPARATOR_CONFIG_TITLE_KEY]
+
+    if SEPARATOR_CONFIG_NUMBERED_KEY in input:
+        value = input[SEPARATOR_CONFIG_NUMBERED_KEY]
+        if value == SEPARATOR_CONFIG_TRUE:
+            output.numbered = True
+        elif value == SEPARATOR_CONFIG_FALSE:
+            output.numbered = False
+        else:
+            logger.warning("Found a strange value for the Numbered property: {value}")
+
+    return output
 
 
 def extract_properties(lines: Iterable[str]):

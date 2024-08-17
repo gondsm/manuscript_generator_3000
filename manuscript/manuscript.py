@@ -54,6 +54,13 @@ class Manuscript:
         cover: Path
         time: datetime.datetime
 
+    @dataclass
+    class SeparatorConfig:
+        """Holds the configuration of a separator, e.g. a chapter separator.
+        """
+        title: str
+        numbered: bool
+
     @classmethod
     def is_control_string(cls, string: str) -> bool:
         """Returns whether the given string is one of the control strings this class knows about.
