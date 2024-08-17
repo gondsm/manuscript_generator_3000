@@ -12,7 +12,6 @@ logger = logging.getLogger(__name__)
 # TODO: these should probably be configurable
 PART_INDICATOR = "-- Part"
 CHAPTER_INDICATOR = "-- Chapter"
-PROLOGUE_INDICATOR = "-- Prologue"
 SCENE_INDICATORS = ["---", "- - -"]
 
 # If a line contains with FILENAME_START and ends with FILENAME_END, then whatever is in the middle has to be a file in
@@ -168,12 +167,7 @@ def replace_indicators(lines: Iterable[str]) -> Iterable[str]:
     output = []
 
     for line in lines:
-        if PROLOGUE_INDICATOR in line:
-            # TODO: remove this special case
-            separator_config = Manuscript.SeparatorConfig("Prólogo", False)
-            output.append(Manuscript.StartChapter(separator_config))
-
-        elif PART_INDICATOR in line:
+        if PART_INDICATOR in line:
             separator_config = convert_inline_config_to_separator_config(extract_inline_config(line))
             output.append(Manuscript.StartPart(separator_config))
 
@@ -228,7 +222,7 @@ def extract_inline_config(line: str) -> dict:
     trimmed_line = line.replace(PART_INDICATOR, "").replace(CHAPTER_INDICATOR, "")
 
     # Then we break up the line looking for individual config entries
-    for elem in trimmed_line.split(INLINE_CONFIG_START):
+    for elem in trimmed_line.strip().split(INLINE_CONFIG_START):
         if (INLINE_CONFIG_SEPARATOR in elem):
             key, value = elem.split(INLINE_CONFIG_SEPARATOR)
 
@@ -258,7 +252,7 @@ def convert_inline_config_to_separator_config(input: dict) -> Manuscript.Separat
         elif value == SEPARATOR_CONFIG_FALSE:
             output.numbered = False
         else:
-            logger.warning("Found a strange value for the Numbered property: {value}")
+            logger.warning(f"Found a strange value for the Numbered property: {value}")
 
     return output
 

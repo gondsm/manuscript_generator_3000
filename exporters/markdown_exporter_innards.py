@@ -4,7 +4,6 @@ from collections.abc import Iterable
 
 from ..manuscript import Manuscript
 
-# TODO: little bit of portuguese here
 MD_PART_SEPARATOR = "#"
 MD_CHAPTER_SEPARATOR = "##"
 MD_SCENE_SEPARATOR = "---"
@@ -32,8 +31,10 @@ def convert_config_to_md_properties(config: Manuscript.Config) -> Iterable[str]:
 def convert_config_to_markdown(config: Manuscript.SeparatorConfig) -> str:
     output = ""
 
+    # Add title
     output += config.title
 
+    # Optionally signal that this chapter is not numbered
     if not config.numbered:
         output += " "
         output += MD_UNNUMBERED_INDICATOR
