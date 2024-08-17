@@ -36,7 +36,7 @@ def load_manuscript_from_subheading(guide_file: Path, subheading: str, root_fold
     lines_with_correct_indicators = innards.replace_indicators(lines_with_text)
 
     logger.info("Extracting config.")
-    parsed_lines, config = innards.extract_config(lines_with_correct_indicators)
+    parsed_lines, config = innards.extract_global_config(lines_with_correct_indicators)
 
     logger.info("Constructing Manuscript object.")
     manuscript = innards.construct_manuscript(parsed_lines, config)

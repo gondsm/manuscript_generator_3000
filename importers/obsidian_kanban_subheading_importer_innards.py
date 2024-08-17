@@ -168,7 +168,7 @@ def replace_indicators(lines: Iterable[str]) -> Iterable[str]:
     return output
 
 
-def extract_config(lines: Iterable[str]) -> [Iterable[str], Manuscript.Config]:
+def extract_global_config(lines: Iterable[str]) -> [Iterable[str], Manuscript.Config]:
     """Extracts the config in the given lines into a dictionary.
 
     Returns [lines_without_config, config]
