@@ -16,7 +16,7 @@ def count_words(string: str) -> int:
 
 
 def count_words_in_manuscript(manuscript: Manuscript) -> int:
-    count = sum([count_words(elem) for elem in manuscript.content if not Manuscript.is_control_string(elem)])
+    count = sum([count_words(elem) for elem in manuscript.content if not Manuscript.is_control_type(elem)])
     return count
 
 def log_word_count(manuscript: Manuscript) -> None:

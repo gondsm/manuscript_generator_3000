@@ -169,16 +169,20 @@ def replace_indicators(lines: Iterable[str]) -> Iterable[str]:
 
     for line in lines:
         if PROLOGUE_INDICATOR in line:
-            output.append(Manuscript.START_PROLOGUE)
+            # TODO: remove this special case
+            separator_config = Manuscript.SeparatorConfig("Prólogo", False)
+            output.append(Manuscript.StartChapter(separator_config))
 
         elif PART_INDICATOR in line:
-            output.append(Manuscript.START_PART)
+            separator_config = convert_inline_config_to_separator_config(extract_inline_config(line))
+            output.append(Manuscript.StartPart(separator_config))
 
         elif CHAPTER_INDICATOR in line:
-            output.append(Manuscript.START_CHAPTER)
+            separator_config = convert_inline_config_to_separator_config(extract_inline_config(line))
+            output.append(Manuscript.StartChapter(separator_config))
 
         elif any([indicator in line for indicator in SCENE_INDICATORS]):
-            output.append(Manuscript.BREAK_SCENE)
+            output.append(Manuscript.BreakScene())
 
         else:
             output.append(line)
@@ -194,6 +198,12 @@ def extract_global_config(lines: Iterable[str]) -> [Iterable[str], Manuscript.Co
     output = []
     config = {}
     for line in lines:
+        if not isinstance(line, str):
+            # Lines could have non-string separators at this point, so we just add the line and move on.
+            # TODO BEFORE MERGE: this makes all of the annotations inconsistent!
+            output.append(line)
+            continue
+
         # Config lines always have a -- in them
         if CONFIG_START in line:
             key = line.split(CONFIG_START)[-1].split(CONFIG_SEPARATOR)[0].strip()

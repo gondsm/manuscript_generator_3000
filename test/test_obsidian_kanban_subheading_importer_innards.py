@@ -96,5 +96,94 @@ class TestConvertInlineConfigToSeparatorConfig(unittest.TestCase):
         self.assertEqual(output.numbered, False)
 
 
+class TestReplaceIndicators(unittest.TestCase):
+    def test_chapter_no_properties(self):
+        """We should get an empty StartChapter if no properties are in the lines
+        """
+        lines = [
+            "This is the first line",
+            "-- Chapter",
+            "This is the second line"
+        ]
+
+        output = innards.replace_indicators(lines)
+
+        self.assertEqual(output[0], lines[0])
+        self.assertIsInstance(output[1], Manuscript.StartChapter)
+        self.assertEqual(output[2], lines[2])
+
+        self.assertEqual(output[1].config, innards.SEPARATOR_CONFIG_DEFAULT)
+
+    def test_chapter_with_properties(self):
+        """We should get an empty StartChapter if no properties are in the lines
+        """
+        lines = [
+            "This is the first line",
+            "-- Chapter: This is some irrelevant text -- Title: This is a chapter title -- Numbered: False",
+            "This is the second line"
+        ]
+
+        output = innards.replace_indicators(lines)
+
+        self.assertEqual(output[0], lines[0])
+        self.assertIsInstance(output[1], Manuscript.StartChapter)
+        self.assertEqual(output[2], lines[2])
+
+        self.assertNotEqual(output[1].config, innards.SEPARATOR_CONFIG_DEFAULT)
+        self.assertEqual(output[1].config.title, "This is a chapter title")
+        self.assertEqual(output[1].config.numbered, False)
+
+    def test_part_no_properties(self):
+        """We should get an empty StartPart if no properties are in the lines
+        """
+        lines = [
+            "This is the first line",
+            "-- Part",
+            "This is the second line"
+        ]
+
+        output = innards.replace_indicators(lines)
+
+        self.assertEqual(output[0], lines[0])
+        self.assertIsInstance(output[1], Manuscript.StartPart)
+        self.assertEqual(output[2], lines[2])
+
+        self.assertEqual(output[1].config, innards.SEPARATOR_CONFIG_DEFAULT)
+
+    def test_part_with_properties(self):
+        """We should get an empty StartChapter if no properties are in the lines
+        """
+        lines = [
+            "This is the first line",
+            "-- Part: This is some irrelevant text -- Title: This is a part title -- Numbered: False",
+            "This is the second line"
+        ]
+
+        output = innards.replace_indicators(lines)
+
+        self.assertEqual(output[0], lines[0])
+        self.assertIsInstance(output[1], Manuscript.StartPart)
+        self.assertEqual(output[2], lines[2])
+
+        self.assertNotEqual(output[1].config, innards.SEPARATOR_CONFIG_DEFAULT)
+        self.assertEqual(output[1].config.title, "This is a part title")
+        self.assertEqual(output[1].config.numbered, False)
+
+    def test_scene(self):
+        """We should get an empty StartPart if no properties are in the lines
+        """
+        lines = [
+            "This is the first line",
+            "---",
+            "This is the second line"
+        ]
+
+        output = innards.replace_indicators(lines)
+
+        self.assertEqual(output[0], lines[0])
+        self.assertIsInstance(output[1], Manuscript.BreakScene)
+        self.assertEqual(output[2], lines[2])
+
+
 if __name__ == '__main__':
     unittest.main()
