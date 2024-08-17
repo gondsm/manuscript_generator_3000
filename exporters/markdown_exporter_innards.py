@@ -5,10 +5,10 @@ from collections.abc import Iterable
 from ..manuscript import Manuscript
 
 # TODO: little bit of portuguese here
-MD_PROLOGUE_SEPARATOR = "## Prólogo {.unnumbered}"
 MD_PART_SEPARATOR = "#"
 MD_CHAPTER_SEPARATOR = "##"
 MD_SCENE_SEPARATOR = "---"
+MD_UNNUMBERED_INDICATOR = "{.unnumbered}"
 
 
 def convert_config_to_md_properties(config: Manuscript.Config) -> Iterable[str]:
@@ -29,19 +29,33 @@ def convert_config_to_md_properties(config: Manuscript.Config) -> Iterable[str]:
     return output_lines
 
 
+def convert_config_to_markdown(config: Manuscript.SeparatorConfig) -> str:
+    output = ""
+
+    output += config.title
+
+    if not config.numbered:
+        output += " "
+        output += MD_UNNUMBERED_INDICATOR
+
+    return output
+
+
 def convert_content_to_lines(content: Iterable[str]) -> Iterable[str]:
     """Takes the content of a Manuscript and turns into valid lines of Markdown.
     """
     output_lines = []
 
     for line in content:
-        if line == Manuscript.START_PART:
-            output_lines.append(MD_PART_SEPARATOR)
-        elif line == Manuscript.START_PROLOGUE:
-            output_lines.append(MD_PROLOGUE_SEPARATOR)
-        elif line == Manuscript.START_CHAPTER:
-            output_lines.append(MD_CHAPTER_SEPARATOR)
-        elif line == Manuscript.BREAK_SCENE:
+        if isinstance(line, Manuscript.StartPart):
+            # TODO: Perhaps a helper function?
+            converted_line = MD_PART_SEPARATOR + " " + convert_config_to_markdown(line.config)
+            output_lines.append(converted_line)
+        if isinstance(line, Manuscript.StartChapter):
+            # TODO: Perhaps a helper function?
+            converted_line = MD_CHAPTER_SEPARATOR + " " + convert_config_to_markdown(line.config)
+            output_lines.append(converted_line)
+        elif isinstance(line, Manuscript.BreakScene):
             output_lines.append(MD_SCENE_SEPARATOR)
         else:
             output_lines.append(line)
