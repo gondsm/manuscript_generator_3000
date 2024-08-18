@@ -40,3 +40,8 @@ There is also no need for text in your manuscript definition. You can simply lis
 - [ ] [[030 - A Flurry of Code]]
 
 Chapters can contain more than one file, of course. The tool will automatically add scene breaks in chapters with multiple file. Similarly, files can also contain scene breaks in themselves; the markdown importer looks for these as a line containing only a `---`.
+
+Separators like chapters (or parts) can also have properties. These are defined by ` -- ` separators on the line that contains the chapter, like so:
+
+- [ ] -- Chapter -- Title: Epilogue -- Numbered: False
+- [ ] [[040 - Maintenance]]

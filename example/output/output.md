@@ -2,10 +2,10 @@
 title: The Unimaginative Software Engineer
 author: Gonçalo S. Martins
 cover: 
-time: 2024-08-14 13:45:18.616841
+time: 2024-08-18 08:51:26.678274
 ---
 
-##
+## 
 
 Once upon a time, a software engineer had a problem. You see, the engineer fancied himself a writer -- for some reason -- but the engineer also fancied himself other things, such as a fan of open source, as well as of simplistic structures.
 
@@ -19,7 +19,7 @@ Until one day the engineer was working on something very long, and about thirty 
 
 And so a problem is found.
 
-##
+## 
 
 "The key issue," the engineer thought, "is that of simple concatenation. All I need to do is cat a few files together and kablamo, I can read the entire manuscript!"
 
@@ -33,7 +33,7 @@ But many years ago the engineer found someone, and that someone has -- for some 
 
 And that was it! Eureka! If the manuscript found itself on an iPad, surely the engineer could pencil in some notes!
 
-##
+## 
 
 And thus an idea is born. If the engineer could code up a tool that imported the manuscript into an intermediate format, then he could write exporters into whatever technologies he needed!
 
@@ -46,3 +46,9 @@ And, of course, the whole thing had to be open source!
 Well there was a time somewhere in the 90s where everything was either "Turbo" or "2000". 2000 is long gone, of course, but what's next?
 
 The Manuscript Generator 3000!
+
+## Epilogue {.unnumbered}
+
+Alas, life is never as simple as we would like it to.
+
+The foolish engineer suddenly thought of a new feature -- chapter titles! -- and woe is him, a lot of the code needed to be reworked.
