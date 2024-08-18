@@ -1,8 +1,10 @@
+# Using a nested class below to define a type in another nested class
+from __future__ import annotations
+
 from pathlib import Path
 from dataclasses import dataclass
 import datetime
-from collections.abc import Iterable
-
+from typing import List, Union
 
 @dataclass
 class Manuscript:
@@ -18,18 +20,18 @@ class Manuscript:
     introduced in the midst of those elements, something to the tune of
 
     [
-        START_PROLOGUE,
+        StartChapter,
         "Everyone knows _any_ good novel starts with a prologue.",
-        START_PART,
-        START_CHAPTER,
+        StartPart,
+        StartChapter,
         "This is the first block of text which is also the first chapter.",
-        START_CHAPTER,
+        StartChapter,
         "This is the second chapter.",
-        BREAK_SCENE,
+        BreakScene,
         "Plot twist, this chapter has two scenes! Exciting!"
     ]
 
-    and so on.
+    and so on. These elements can contain properties. See below.
 
     There is no requirement for a manuscript to contain all three, i.e. a short story would not traditionally be broken
     into parts or chapters, but it could be broken into scenes.
@@ -37,13 +39,6 @@ class Manuscript:
     The content of the manuscript can contain markdown formatting (**bold**, _italics_, etc) and the exporters should be
     able to deal with that.
     """
-    # Each of these signals the start of a new section in the manuscript.
-    START_PROLOGUE = "START_PROLOGUE"
-    START_PART = "START_PART"
-    START_CHAPTER = "START_CHAPTER"
-
-    # Scenes are different as we don't signal their start, only their breaks.
-    BREAK_SCENE = "BREAK_SCENE"
 
     @dataclass
     class Config:
@@ -54,15 +49,45 @@ class Manuscript:
         cover: Path
         time: datetime.datetime
 
+    @dataclass
+    class SeparatorConfig:
+        """Holds the configuration of a separator, e.g. a chapter separator.
+        """
+        title: str
+        numbered: bool
+
+    @dataclass
+    class StartPart:
+        """Signals the start of a new part.
+        """
+        config: Manuscript.SeparatorConfig
+
+    @dataclass
+    class StartChapter:
+        """Signals the start of a part.
+        """
+        config: Manuscript.SeparatorConfig
+
+    @dataclass
+    class BreakScene:
+        """Signals the start of a scene.
+        (And scenes don't have attributes)
+        """
+        pass
+
     @classmethod
-    def is_control_string(cls, string: str) -> bool:
+    def is_control_type(cls, input) -> bool:
         """Returns whether the given string is one of the control strings this class knows about.
         """
         # TODO: would be cool to not have to repeat all of these names here, which is where preprocessor macros would
         # come in handy.
-        control_strings = [cls.START_PROLOGUE, cls.START_PART, cls.START_CHAPTER, cls.BREAK_SCENE]
-        return any([elem in string for elem in control_strings])
+        control_types = [cls.StartPart, cls.StartChapter, cls.BreakScene]
+        return any([isinstance(input, elem) for elem in control_types])
+
+    # The contents of the Manuscript will be a list of strings with the actual text, interspersed with the separator
+    # classes defined above.
+    Content = List[Union[str, StartPart, StartChapter, BreakScene]]
 
     # Lastly, the things that this actually contains.
-    content: Iterable[str]
+    content: Content
     config: Config

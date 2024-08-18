@@ -32,11 +32,13 @@ def load_manuscript_from_index_file(index_file: Path, root_folder: Path) -> Manu
     logger.info("Extracting text from files.")
     lines_with_text = innards.extract_text_from_files(raw_lines, root_folder)
 
+    # TODO: seeing as replace_indicators will introduce the separator instances, perhaps it makes more sense to call
+    # extract_global_config first, thus keeping the objects we're dealing with as pure lists of strings for longer.
     logger.info("Replacing text indicators with Manuscript indicators.")
     lines_with_correct_indicators = innards.replace_indicators(lines_with_text)
 
     logger.info("Extracting config.")
-    parsed_lines, config = innards.extract_config(lines_with_correct_indicators)
+    parsed_lines, config = innards.extract_global_config(lines_with_correct_indicators)
 
     logger.info("Constructing Manuscript object.")
     manuscript = innards.construct_manuscript(parsed_lines, config)

@@ -2,6 +2,7 @@ from pathlib import Path
 import logging
 import datetime
 from collections.abc import Iterable
+import copy
 
 from ..manuscript import Manuscript
 
@@ -11,7 +12,6 @@ logger = logging.getLogger(__name__)
 # TODO: these should probably be configurable
 PART_INDICATOR = "-- Part"
 CHAPTER_INDICATOR = "-- Chapter"
-PROLOGUE_INDICATOR = "-- Prologue"
 SCENE_INDICATORS = ["---", "- - -"]
 
 # If a line contains with FILENAME_START and ends with FILENAME_END, then whatever is in the middle has to be a file in
@@ -23,6 +23,23 @@ FILENAME_END = "]]"
 # -- config_key: config_value
 CONFIG_START = "- [ ] -- "
 CONFIG_SEPARATOR = ": "
+
+# Part/chapter/etc separator lines can contain inline config
+INLINE_CONFIG_START = " -- "
+INLINE_CONFIG_SEPARATOR = ": "
+
+# Dictionary keys for parsing out separator config
+SEPARATOR_CONFIG_TITLE_KEY = "Title"
+SEPARATOR_CONFIG_NUMBERED_KEY = "Numbered"
+
+# Boolean values for separator config
+# TODO: this seems excessive. There should be a standard way of converting a string to bool following Python rules (like
+# any YAML parser would do, that has to be a thing)
+SEPARATOR_CONFIG_TRUE = "True"
+SEPARATOR_CONFIG_FALSE = "False"
+
+# Default config for separators
+SEPARATOR_CONFIG_DEFAULT = Manuscript.SeparatorConfig("", True)
 
 # And these are the config keys we know about
 AUTHOR_KEY = "Author"
@@ -142,25 +159,24 @@ def extract_text_from_files(lines: Iterable[str], root_folder: Path) -> Iterable
     return output
 
 
-def replace_indicators(lines: Iterable[str]) -> Iterable[str]:
-    """Replaces the indicators defined above (e.g. PART_INDICATOR) with those used by Manuscript.
+def replace_indicators(lines: Iterable[str]) -> Manuscript.Content:
+    """Replaces the indicators defined above (e.g. PART_INDICATOR) with the separator objects used in Manuscript.
 
-    No other lines are touched. Returns a new list, the param is not touched.
+    No other lines are touched. Returns a list that contains strings and separator objects (see Manuscript).
     """
     output = []
 
     for line in lines:
-        if PROLOGUE_INDICATOR in line:
-            output.append(Manuscript.START_PROLOGUE)
-
-        elif PART_INDICATOR in line:
-            output.append(Manuscript.START_PART)
+        if PART_INDICATOR in line:
+            separator_config = convert_inline_config_to_separator_config(extract_inline_config(line))
+            output.append(Manuscript.StartPart(separator_config))
 
         elif CHAPTER_INDICATOR in line:
-            output.append(Manuscript.START_CHAPTER)
+            separator_config = convert_inline_config_to_separator_config(extract_inline_config(line))
+            output.append(Manuscript.StartChapter(separator_config))
 
         elif any([indicator in line for indicator in SCENE_INDICATORS]):
-            output.append(Manuscript.BREAK_SCENE)
+            output.append(Manuscript.BreakScene())
 
         else:
             output.append(line)
@@ -168,7 +184,7 @@ def replace_indicators(lines: Iterable[str]) -> Iterable[str]:
     return output
 
 
-def extract_config(lines: Iterable[str]) -> [Iterable[str], Manuscript.Config]:
+def extract_global_config(lines: Manuscript.Content) -> [Iterable[str], Manuscript.Config]:
     """Extracts the config in the given lines into a dictionary.
 
     Returns [lines_without_config, config]
@@ -176,6 +192,11 @@ def extract_config(lines: Iterable[str]) -> [Iterable[str], Manuscript.Config]:
     output = []
     config = {}
     for line in lines:
+        if Manuscript.is_control_type(line):
+            # Lines could have non-string separators at this point, so we just add the line and move on.
+            output.append(line)
+            continue
+
         # Config lines always have a -- in them
         if CONFIG_START in line:
             key = line.split(CONFIG_START)[-1].split(CONFIG_SEPARATOR)[0].strip()
@@ -185,6 +206,55 @@ def extract_config(lines: Iterable[str]) -> [Iterable[str], Manuscript.Config]:
             output.append(line)
 
     return [output, config]
+
+
+def extract_inline_config(line: str) -> dict:
+    """Extracts the config that may exist in part/chapter/etc separators.
+    """
+    output = {}
+
+    # No point in parsing if there's nothing to parse
+    if (INLINE_CONFIG_START not in line):
+        return output
+
+    # Start by erasing any instances of separators from the line
+    trimmed_line = line.replace(PART_INDICATOR, "").replace(CHAPTER_INDICATOR, "")
+
+    # Then we break up the line looking for individual config entries
+    for elem in trimmed_line.split(INLINE_CONFIG_START):
+        if (INLINE_CONFIG_SEPARATOR in elem):
+            key, value = elem.split(INLINE_CONFIG_SEPARATOR)
+
+            if not key or not value:
+                logger.warning("Found a strange empty key or value whilst parsing this line. Skipping line.")
+                logger.warning(f"Element: {elem}")
+                logger.warning(f"Line: {line}")
+                continue
+
+            # Strip out extraneous characters before inserting into the dict
+            output[key.strip()] = value.strip()
+
+    return output
+
+
+def convert_inline_config_to_separator_config(input: dict) -> Manuscript.SeparatorConfig:
+    """Converts a dict containing inline config into a SeparatorConfig object.
+    """
+    output = copy.deepcopy(SEPARATOR_CONFIG_DEFAULT)
+
+    if SEPARATOR_CONFIG_TITLE_KEY in input:
+        output.title = input[SEPARATOR_CONFIG_TITLE_KEY]
+
+    if SEPARATOR_CONFIG_NUMBERED_KEY in input:
+        value = input[SEPARATOR_CONFIG_NUMBERED_KEY]
+        if value == SEPARATOR_CONFIG_TRUE:
+            output.numbered = True
+        elif value == SEPARATOR_CONFIG_FALSE:
+            output.numbered = False
+        else:
+            logger.warning(f"Found a strange value for the Numbered property: {value}")
+
+    return output
 
 
 def extract_properties(lines: Iterable[str]):
