@@ -4,8 +4,7 @@ from __future__ import annotations
 from pathlib import Path
 from dataclasses import dataclass
 import datetime
-from collections.abc import Iterable
-
+from typing import List, Union
 
 @dataclass
 class Manuscript:
@@ -85,6 +84,10 @@ class Manuscript:
         control_types = [cls.StartPart, cls.StartChapter, cls.BreakScene]
         return any([isinstance(input, elem) for elem in control_types])
 
+    # The contents of the Manuscript will be a list of strings with the actual text, interspersed with the separator
+    # classes defined above.
+    Content = List[Union[str, StartPart, StartChapter, BreakScene]]
+
     # Lastly, the things that this actually contains.
-    content: Iterable[str]
+    content: Content
     config: Config

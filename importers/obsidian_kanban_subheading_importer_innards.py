@@ -159,10 +159,10 @@ def extract_text_from_files(lines: Iterable[str], root_folder: Path) -> Iterable
     return output
 
 
-def replace_indicators(lines: Iterable[str]) -> Iterable[str]:
-    """Replaces the indicators defined above (e.g. PART_INDICATOR) with those used by Manuscript.
+def replace_indicators(lines: Iterable[str]) -> Manuscript.Content:
+    """Replaces the indicators defined above (e.g. PART_INDICATOR) with the separator objects used in Manuscript.
 
-    No other lines are touched. Returns a new list, the param is not touched.
+    No other lines are touched. Returns a list that contains strings and separator objects (see Manuscript).
     """
     output = []
 
@@ -184,7 +184,7 @@ def replace_indicators(lines: Iterable[str]) -> Iterable[str]:
     return output
 
 
-def extract_global_config(lines: Iterable[str]) -> [Iterable[str], Manuscript.Config]:
+def extract_global_config(lines: Manuscript.Content) -> [Iterable[str], Manuscript.Config]:
     """Extracts the config in the given lines into a dictionary.
 
     Returns [lines_without_config, config]
@@ -192,9 +192,8 @@ def extract_global_config(lines: Iterable[str]) -> [Iterable[str], Manuscript.Co
     output = []
     config = {}
     for line in lines:
-        if not isinstance(line, str):
+        if Manuscript.is_control_type(line):
             # Lines could have non-string separators at this point, so we just add the line and move on.
-            # TODO BEFORE MERGE: this makes all of the annotations inconsistent!
             output.append(line)
             continue
 
@@ -222,7 +221,7 @@ def extract_inline_config(line: str) -> dict:
     trimmed_line = line.replace(PART_INDICATOR, "").replace(CHAPTER_INDICATOR, "")
 
     # Then we break up the line looking for individual config entries
-    for elem in trimmed_line.strip().split(INLINE_CONFIG_START):
+    for elem in trimmed_line.split(INLINE_CONFIG_START):
         if (INLINE_CONFIG_SEPARATOR in elem):
             key, value = elem.split(INLINE_CONFIG_SEPARATOR)
 
@@ -232,7 +231,8 @@ def extract_inline_config(line: str) -> dict:
                 logger.warning(f"Line: {line}")
                 continue
 
-            output[key] = value
+            # Strip out extraneous characters before inserting into the dict
+            output[key.strip()] = value.strip()
 
     return output
 

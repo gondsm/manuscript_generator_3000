@@ -27,8 +27,8 @@ class TestExtractInlineConfig(unittest.TestCase):
         output = innards.extract_inline_config(line)
 
         self.assertTrue(isinstance(output, dict))
-        self.assertEqual(output["Title"], "This is a chapter title")
         self.assertEqual(len(output), 1)
+        self.assertEqual(output["Title"], "This is a chapter title")
 
     def test_multiple_config(self):
         """Pull out various config elements.
@@ -37,9 +37,9 @@ class TestExtractInlineConfig(unittest.TestCase):
         output = innards.extract_inline_config(line)
 
         self.assertTrue(isinstance(output, dict))
+        self.assertEqual(len(output), 2)
         self.assertEqual(output["Title"], "This is a chapter title")
         self.assertEqual(output["Numbered"], "False")
-        self.assertEqual(len(output), 2)
 
     def test_multiple_config_with_irrelevant_text(self):
         """The function should be robust to some variation around the separator (in case I feel frisky).

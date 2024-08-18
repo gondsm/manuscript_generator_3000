@@ -42,7 +42,7 @@ def convert_config_to_markdown(config: Manuscript.SeparatorConfig) -> str:
     return output
 
 
-def convert_content_to_lines(content: Iterable[str]) -> Iterable[str]:
+def convert_content_to_lines(content: Manuscript.Content) -> Iterable[str]:
     """Takes the content of a Manuscript and turns into valid lines of Markdown.
     """
     output_lines = []
@@ -70,7 +70,7 @@ def concatenate_content_lines_into_string(content: Iterable[str]) -> str:
     return "\n\n".join(content)
 
 
-def write_to_file(properties: Iterable[str], content: Iterable[str], out_file: Path) -> None:
+def write_to_file(properties: Iterable[str], content: Manuscript.Content, out_file: Path) -> None:
     """Takes the properties and Markdown content, and writes it into the given file.
     """
     with open(out_file, "w", encoding="utf-8") as out:
