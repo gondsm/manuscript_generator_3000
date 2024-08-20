@@ -2,7 +2,7 @@
 title: The Unimaginative Software Engineer
 author: Gonçalo S. Martins
 cover: 
-time: 2024-08-18 08:51:26.678274
+time: 2024-08-20 15:23:36.879075
 ---
 
 ## 

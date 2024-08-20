@@ -1,4 +1,6 @@
 import unittest
+from typing import List
+from pathlib import Path
 
 # We need to start by adding the packages we're testing into the path, which is an unfortunate reality of not wanting to
 # install the package just to run unit tests.
@@ -15,7 +17,7 @@ class TestExtractInlineConfig(unittest.TestCase):
         """
         # There's a break in this line, but no config
         line = "-- Chapter: this is some stuff I added"
-        output = innards.extract_inline_config(line)
+        output = innards._extract_inline_config(line)
 
         self.assertTrue(isinstance(output, dict))
         self.assertEqual(len(output), 0)
@@ -24,7 +26,7 @@ class TestExtractInlineConfig(unittest.TestCase):
         """Pull out a single config element.
         """
         line = "-- Chapter -- Title: This is a chapter title"
-        output = innards.extract_inline_config(line)
+        output = innards._extract_inline_config(line)
 
         self.assertTrue(isinstance(output, dict))
         self.assertEqual(len(output), 1)
@@ -34,7 +36,7 @@ class TestExtractInlineConfig(unittest.TestCase):
         """Pull out various config elements.
         """
         line = "-- Chapter -- Title: This is a chapter title -- Numbered: False"
-        output = innards.extract_inline_config(line)
+        output = innards._extract_inline_config(line)
 
         self.assertTrue(isinstance(output, dict))
         self.assertEqual(len(output), 2)
@@ -45,7 +47,7 @@ class TestExtractInlineConfig(unittest.TestCase):
         """The function should be robust to some variation around the separator (in case I feel frisky).
         """
         line = "-- Chapter: This is some irrelevant text -- Title: This is a chapter title -- Numbered: False"
-        output = innards.extract_inline_config(line)
+        output = innards._extract_inline_config(line)
 
         self.assertTrue(isinstance(output, dict))
         self.assertEqual(output["Title"], "This is a chapter title")
@@ -57,7 +59,7 @@ class TestConvertInlineConfigToSeparatorConfig(unittest.TestCase):
     def test_empty_dict(self):
         """Passing in an empty dictionary should return the default config for separators.
         """
-        output = innards.convert_inline_config_to_separator_config({})
+        output = innards._convert_inline_config_to_separator_config({})
 
         # Given an empty dict, we should have an instance of SeparatorConfig that is initialised with the default but IS
         # NOT the same instance as the default.
@@ -69,7 +71,7 @@ class TestConvertInlineConfigToSeparatorConfig(unittest.TestCase):
         """Passing in a dict with weird keys should behave the same as an empty dict.
         """
         input = {"sOmE_wEiRd_kEy": "sOmE_wEiRd_vAlUe"}
-        output = innards.convert_inline_config_to_separator_config(input)
+        output = innards._convert_inline_config_to_separator_config(input)
 
         self.assertTrue(isinstance(output, Manuscript.SeparatorConfig))
         self.assertEqual(output, innards.SEPARATOR_CONFIG_DEFAULT)
@@ -79,7 +81,7 @@ class TestConvertInlineConfigToSeparatorConfig(unittest.TestCase):
         """Gief title, get title
         """
         input = {"Title": "This is a chapter title"}
-        output = innards.convert_inline_config_to_separator_config(input)
+        output = innards._convert_inline_config_to_separator_config(input)
 
         self.assertTrue(isinstance(output, Manuscript.SeparatorConfig))
         self.assertEqual(output.title, "This is a chapter title")
@@ -89,7 +91,7 @@ class TestConvertInlineConfigToSeparatorConfig(unittest.TestCase):
         """Gief title, get title
         """
         input = {"Title": "This is a chapter title", "Numbered": "False"}
-        output = innards.convert_inline_config_to_separator_config(input)
+        output = innards._convert_inline_config_to_separator_config(input)
 
         self.assertTrue(isinstance(output, Manuscript.SeparatorConfig))
         self.assertEqual(output.title, "This is a chapter title")
@@ -183,6 +185,225 @@ class TestReplaceIndicators(unittest.TestCase):
         self.assertEqual(output[0], lines[0])
         self.assertIsInstance(output[1], Manuscript.BreakScene)
         self.assertEqual(output[2], lines[2])
+
+
+class TestExtractRelevantLinesFromIndexFile(unittest.TestCase):
+    TEST_FILE_NAME = Path("test_file")
+
+    def write_content_to_test_file(self, content: List[str]):
+        """Writes content to the test file we know about.
+        """
+        with open(self.TEST_FILE_NAME, "w") as test_file:
+            for line in content:
+                test_file.write(line)
+                test_file.write("\n")
+
+    def remove_test_file(self):
+        self.TEST_FILE_NAME.unlink()
+
+    def tearDown(self) -> None:
+        super().tearDown()
+        self.remove_test_file()
+
+    def test_no_relevant_lines(self):
+        """If there are no relevant lines, we shouldn't get anything back.
+        """
+        # Define and write out some pointless content
+        content = [
+            "This is an irrelevant line",
+            "This is another irrelevant line",
+            "All good things come in threes."
+        ]
+
+        self.write_content_to_test_file(content)
+
+        # Call the function we're testing
+        relevant_lines = innards.extract_relevant_lines_from_index_file(self.TEST_FILE_NAME, innards.DelimiterMode.TASK)
+
+        # We shouldn't have anything
+        self.assertEqual(relevant_lines, [])
+
+    def test_one_relevant_line(self):
+        """If there's only one relevant line, we should see it.
+        """
+        # Define and write out some pointful content
+        content = [
+            "This is an irrelevant line",
+            "This is another irrelevant line",
+            "All good things come in threes.",
+            "- [ ] [[ this is a relevant line because it (potentially) contains a file to include"
+        ]
+
+        self.write_content_to_test_file(content)
+
+        # Call the function we're testing
+        relevant_lines = innards.extract_relevant_lines_from_index_file(self.TEST_FILE_NAME, innards.DelimiterMode.TASK)
+
+        # We should have the one relevant line
+        self.assertEqual(len(relevant_lines), 1)
+        self.assertEqual(relevant_lines, [content[-1]])
+
+    def test_one_relevant_line_other_list(self):
+        """If there's only one relevant line, we should see it.
+        """
+        # Define and write out some pointful content
+        relevant_line = "- [ ] [[ this is a relevant line because it (potentially) contains a file to include"
+        content = [
+            "This is an irrelevant line",
+            "This is another irrelevant line",
+            "All good things come in threes.",
+            relevant_line,
+            "- This is another list element that is not relevant",
+            "- And another",
+        ]
+
+        self.write_content_to_test_file(content)
+
+        # Call the function we're testing
+        relevant_lines = innards.extract_relevant_lines_from_index_file(self.TEST_FILE_NAME, innards.DelimiterMode.TASK)
+
+        # We should have the one relevant line
+        self.assertEqual(len(relevant_lines), 1)
+        self.assertEqual(relevant_lines, [relevant_line])
+
+    def test_two_relevant_lines(self):
+        # Define and write out some even more pointful content
+        relevant_lines = [
+            "- [ ] [[ this is a relevant line because it (potentially) contains a file to include",
+            "- [ ] [[ this is another relevant line",
+        ]
+        content = [
+            "This is an irrelevant line",
+            "This is another irrelevant line",
+            "All good things come in threes.",
+            relevant_lines[0],
+            relevant_lines[1],
+            "- This is another list element that is not relevant",
+            "- And another",
+        ]
+
+        self.write_content_to_test_file(content)
+
+        # Call the function we're testing
+        relevant_lines = innards.extract_relevant_lines_from_index_file(self.TEST_FILE_NAME, innards.DelimiterMode.TASK)
+
+        # We should have the one relevant line
+        self.assertEqual(len(relevant_lines), 2)
+        self.assertEqual(relevant_lines, relevant_lines)
+
+
+class TestExtractRelevantLinesFromIndexFileEmojiMode(unittest.TestCase):
+    """ Same tests as above but using the SHORT DelimiterMode.
+
+    (I prefer duplicating the tests and later remove the deprecated version than try to be clever about writing tests
+    around config.)
+    """
+    TEST_FILE_NAME = Path("test_file")
+
+    def write_content_to_test_file(self, content: List[str]):
+        """Writes content to the test file we know about.
+        """
+        with open(self.TEST_FILE_NAME, "w", encoding="utf-8") as test_file:
+            for line in content:
+                test_file.write(line)
+                test_file.write("\n")
+
+    def remove_test_file(self):
+        self.TEST_FILE_NAME.unlink()
+
+    def tearDown(self) -> None:
+        super().tearDown()
+        self.remove_test_file()
+
+    def test_no_relevant_lines(self):
+        """If there are no relevant lines, we shouldn't get anything back.
+        """
+        # Define and write out some pointless content
+        content = [
+            "This is an irrelevant line",
+            "This is another irrelevant line",
+            "All good things come in threes."
+        ]
+
+        self.write_content_to_test_file(content)
+
+        # Call the function we're testing
+        relevant_lines = innards.extract_relevant_lines_from_index_file(self.TEST_FILE_NAME,
+                                                                        innards.DelimiterMode.EMOJI)
+
+        # We shouldn't have anything
+        self.assertEqual(relevant_lines, [])
+
+    def test_one_relevant_line(self):
+        """If there's only one relevant line, we should see it.
+        """
+        # Define and write out some pointful content
+        content = [
+            "This is an irrelevant line",
+            "This is another irrelevant line",
+            "All good things come in threes.",
+            "- 📚 [[ this is a relevant line because it (potentially) contains a file to include"
+        ]
+
+        self.write_content_to_test_file(content)
+
+        # Call the function we're testing
+        relevant_lines = innards.extract_relevant_lines_from_index_file(self.TEST_FILE_NAME,
+                                                                        innards.DelimiterMode.EMOJI)
+
+        # We should have the one relevant line
+        self.assertEqual(len(relevant_lines), 1)
+        self.assertEqual(relevant_lines, [content[-1]])
+
+    def test_one_relevant_line_other_list(self):
+        """If there's only one relevant line, we should see it.
+        """
+        # Define and write out some pointful content
+        relevant_line = "- 📚 [[ this is a relevant line because it (potentially) contains a file to include"
+        content = [
+            "This is an irrelevant line",
+            "This is another irrelevant line",
+            "All good things come in threes.",
+            relevant_line,
+            "- This is another list element that is not relevant",
+            "- And another",
+        ]
+
+        self.write_content_to_test_file(content)
+
+        # Call the function we're testing
+        relevant_lines = innards.extract_relevant_lines_from_index_file(self.TEST_FILE_NAME,
+                                                                        innards.DelimiterMode.EMOJI)
+
+        # We should have the one relevant line
+        self.assertEqual(len(relevant_lines), 1)
+        self.assertEqual(relevant_lines, [relevant_line])
+
+    def test_two_relevant_lines(self):
+        # Define and write out some even more pointful content
+        relevant_lines = [
+            "- 📚 [[ this is a relevant line because it (potentially) contains a file to include",
+            "- 📚 [[ this is another relevant line",
+        ]
+        content = [
+            "This is an irrelevant line",
+            "This is another irrelevant line",
+            "All good things come in threes.",
+            relevant_lines[0],
+            relevant_lines[1],
+            "- This is another list element that is not relevant",
+            "- And another",
+        ]
+
+        self.write_content_to_test_file(content)
+
+        # Call the function we're testing
+        relevant_lines = innards.extract_relevant_lines_from_index_file(self.TEST_FILE_NAME,
+                                                                        innards.DelimiterMode.EMOJI)
+
+        # We should have the one relevant line
+        self.assertEqual(len(relevant_lines), 2)
+        self.assertEqual(relevant_lines, relevant_lines)
 
 
 if __name__ == '__main__':

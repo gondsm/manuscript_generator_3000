@@ -11,14 +11,14 @@ Now let's use this as an index file for a little manuscript.
 
 First comes a bit of config:
 
-- [ ] -- Title: The Unimaginative Software Engineer
-- [ ] -- Author: Gonçalo S. Martins
+- 📚 -- Title: The Unimaginative Software Engineer
+- 📚 -- Author: Gonçalo S. Martins
 
-Config keys, as understood by the tool, are encoded in the `- [ ] -- key: value` format above. This means that every line that contains that sequence will be interpreted as some sort of configuration for the manuscript.
+Config keys, as understood by the tool, are encoded in the `- 📚 -- key: value` format above. This means that every line that contains that sequence will be interpreted as some sort of configuration for the manuscript.
 
 In a similar vein, the tool looks for part and chapter breaks in the following format:
 
-- [ ] -- Chapter
+- 📚 -- Chapter
 
 So from this point onwards, the tool has introduced a chapter break in our manuscript.
 
@@ -28,20 +28,20 @@ Let's add some.
 
 Content is added by including other files:
 
-- [ ] [[010 - The Engineer Had a Problem]]
+- 📚 [[010 - The Engineer Had a Problem]]
 
 When the tool finds the line above, it will add it to the manuscript, so now our manuscript has a chapter and one entire file's worth of content. The content in that file can be formatted in any way Markdown can be, including *emphasis* and **bold**.
 
 There is also no need for text in your manuscript definition. You can simply list out your chapters and files:
 
-- [ ] -- Chapter
-- [ ] [[020 - Huzzah, a solution!]]
-- [ ] -- Chapter
-- [ ] [[030 - A Flurry of Code]]
+- 📚 -- Chapter
+- 📚 [[020 - Huzzah, a solution!]]
+- 📚 -- Chapter
+- 📚 [[030 - A Flurry of Code]]
 
 Chapters can contain more than one file, of course. The tool will automatically add scene breaks in chapters with multiple file. Similarly, files can also contain scene breaks in themselves; the markdown importer looks for these as a line containing only a `---`.
 
 Separators like chapters (or parts) can also have properties. These are defined by ` -- ` separators on the line that contains the chapter, like so:
 
-- [ ] -- Chapter -- Title: Epilogue -- Numbered: False
-- [ ] [[040 - Maintenance]]
+- 📚 -- Chapter -- Title: Epilogue -- Numbered: False
+- 📚 [[040 - Maintenance]]

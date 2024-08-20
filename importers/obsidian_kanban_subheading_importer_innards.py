@@ -3,10 +3,24 @@ import logging
 import datetime
 from collections.abc import Iterable
 import copy
+from enum import Enum
 
 from ..manuscript import Manuscript
 
 logger = logging.getLogger(__name__)
+
+
+# Define delimiter modes
+class DelimiterMode(Enum):
+    """This script can deal with two kinds of delimiters, essentially how files and config are expected to look in guide
+       and index files.
+
+       TASK mode means the initial `- [ ]` syntax.
+       EMOJI mode means the new, simple list `- 📚 ` syntax.
+    """
+    TASK = 1,
+    EMOJI = 2
+
 
 # These constants define the language that this parser accepts.
 # TODO: these should probably be configurable
@@ -14,14 +28,20 @@ PART_INDICATOR = "-- Part"
 CHAPTER_INDICATOR = "-- Chapter"
 SCENE_INDICATORS = ["---", "- - -"]
 
-# If a line contains with FILENAME_START and ends with FILENAME_END, then whatever is in the middle has to be a file in
+# If a line contains with FILENAME_START (depending on mode) and ends with FILENAME_END, then whatever is in the middle has to be a file in
 # the given root folder.
-FILENAME_START = "- [ ] [["
+FILENAME_START = {
+    DelimiterMode.TASK: "- [ ] [[",
+    DelimiterMode.EMOJI: "- 📚 [["
+}
 FILENAME_END = "]]"
 
-# If a line contains this sequence, then it is a config line of the format
+# If a line contains this sequence (depending on mode), then it is a config line of the format
 # -- config_key: config_value
-CONFIG_START = "- [ ] -- "
+CONFIG_START = {
+    DelimiterMode.TASK: "- [ ] -- ",
+    DelimiterMode.EMOJI: "- 📚 -- "
+}
 CONFIG_SEPARATOR = ": "
 
 # Part/chapter/etc separator lines can contain inline config
@@ -47,7 +67,7 @@ TITLE_KEY = "Title"
 COVER_KEY = "Cover"
 
 
-def extract_relevant_section(guide_file: Path, subheading: str) -> Iterable[str]:
+def extract_relevant_section(guide_file: Path, subheading: str, delimiter_mode: DelimiterMode) -> Iterable[str]:
     """Extracts the relevant text from the given markdown subheading.
 
     Returns the text verbatim as a list of lines, to be post-processed later.
@@ -68,13 +88,13 @@ def extract_relevant_section(guide_file: Path, subheading: str) -> Iterable[str]
                 in_region_of_interest = False
                 break
             # We only pull in lines that either contain config or file name to include.
-            elif in_region_of_interest and (CONFIG_START in line or FILENAME_START in line):
+            elif in_region_of_interest and (CONFIG_START[delimiter_mode] in line or FILENAME_START[delimiter_mode] in line):
                 lines.append(line)
 
     return lines
 
 
-def extract_relevant_lines_from_index_file(index_file: Path) -> Iterable[str]:
+def extract_relevant_lines_from_index_file(index_file: Path, delimiter_mode: DelimiterMode) -> Iterable[str]:
     """Similar to extract_relevant_section, but from an index file instead of a guide file.
 
     Since an index file won't have subheadings (it will represent a single manuscript), we need only to pull in all
@@ -87,13 +107,13 @@ def extract_relevant_lines_from_index_file(index_file: Path) -> Iterable[str]:
                 # Disregard empty lines
                 continue
             # We only pull in lines that either contain config or file name to include.
-            elif CONFIG_START in line or FILENAME_START in line:
-                lines.append(line)
+            elif CONFIG_START[delimiter_mode] in line or FILENAME_START[delimiter_mode] in line:
+                lines.append(line.strip())
 
     return lines
 
 
-def list_markdown_files_in_folder(folder: Path):
+def _list_markdown_files_in_folder(folder: Path):
     files = []
     for path, _, filenames in folder.walk():
         for filename in filenames:
@@ -104,11 +124,11 @@ def list_markdown_files_in_folder(folder: Path):
     return files
 
 
-def extract_text_from_file(filename: Path, root_folder: Path) -> Iterable[str]:
+def _extract_text_from_file(filename: Path, root_folder: Path) -> Iterable[str]:
     """Finds the given file in the given folder (or subfolders) and returns its contents as a list of strings.
     """
     # TODO: bit wasteful to walk the directory for every single call to this function
-    known_files = list_markdown_files_in_folder(root_folder)
+    known_files = _list_markdown_files_in_folder(root_folder)
 
     # Extract the complete path from the known files
     # TODO: going from a pathlib object to string is a bit meh, surely pathlib has a cooler way of doing this.
@@ -135,7 +155,7 @@ def extract_text_from_file(filename: Path, root_folder: Path) -> Iterable[str]:
     return output
 
 
-def extract_text_from_files(lines: Iterable[str], root_folder: Path) -> Iterable[str]:
+def extract_text_from_files(lines: Iterable[str], root_folder: Path, delimiter_mode: DelimiterMode) -> Iterable[str]:
     """Given a sequence of lines as extracted by extract_relevant_section, pull text out of the given filenames.
 
     This replaces (not in place) every reference to a filename in the lines with a sequence of lines that contain the
@@ -143,11 +163,11 @@ def extract_text_from_files(lines: Iterable[str], root_folder: Path) -> Iterable
     """
     output = []
     for line in lines:
-        if FILENAME_START in line and FILENAME_END in line:
-            filename = line.split(FILENAME_START)[-1].split(FILENAME_END)[0]
+        if FILENAME_START[delimiter_mode] in line and FILENAME_END in line:
+            filename = line.split(FILENAME_START[delimiter_mode])[-1].split(FILENAME_END)[0]
             logger.debug(f"Loading file: {filename}")
 
-            text = extract_text_from_file(filename, root_folder)
+            text = _extract_text_from_file(filename, root_folder)
 
             logger.debug(f"Loaded {len(text)} lines.")
 
@@ -164,15 +184,18 @@ def replace_indicators(lines: Iterable[str]) -> Manuscript.Content:
 
     No other lines are touched. Returns a list that contains strings and separator objects (see Manuscript).
     """
+    # TODO: there's an undesirable relationship between this and extract_global_config below. If in SHORT DelimiterMode,
+    # it is possible that extract_global_config get rid of the indicators this function uses to create its separator
+    # objects. For now, it is CRUCIAL that this function be called befor extract_global_config.
     output = []
 
     for line in lines:
         if PART_INDICATOR in line:
-            separator_config = convert_inline_config_to_separator_config(extract_inline_config(line))
+            separator_config = _convert_inline_config_to_separator_config(_extract_inline_config(line))
             output.append(Manuscript.StartPart(separator_config))
 
         elif CHAPTER_INDICATOR in line:
-            separator_config = convert_inline_config_to_separator_config(extract_inline_config(line))
+            separator_config = _convert_inline_config_to_separator_config(_extract_inline_config(line))
             output.append(Manuscript.StartChapter(separator_config))
 
         elif any([indicator in line for indicator in SCENE_INDICATORS]):
@@ -184,7 +207,7 @@ def replace_indicators(lines: Iterable[str]) -> Manuscript.Content:
     return output
 
 
-def extract_global_config(lines: Manuscript.Content) -> [Iterable[str], Manuscript.Config]:
+def extract_global_config(lines: Manuscript.Content, delimiter_mode: DelimiterMode) -> [Iterable[str], Manuscript.Config]:
     """Extracts the config in the given lines into a dictionary.
 
     Returns [lines_without_config, config]
@@ -198,8 +221,8 @@ def extract_global_config(lines: Manuscript.Content) -> [Iterable[str], Manuscri
             continue
 
         # Config lines always have a -- in them
-        if CONFIG_START in line:
-            key = line.split(CONFIG_START)[-1].split(CONFIG_SEPARATOR)[0].strip()
+        if CONFIG_START[delimiter_mode] in line:
+            key = line.split(CONFIG_START[delimiter_mode])[-1].split(CONFIG_SEPARATOR)[0].strip()
             value = line.split(CONFIG_SEPARATOR)[-1].strip()
             config[key] = value
         else:
@@ -208,7 +231,7 @@ def extract_global_config(lines: Manuscript.Content) -> [Iterable[str], Manuscri
     return [output, config]
 
 
-def extract_inline_config(line: str) -> dict:
+def _extract_inline_config(line: str) -> dict:
     """Extracts the config that may exist in part/chapter/etc separators.
     """
     output = {}
@@ -237,7 +260,7 @@ def extract_inline_config(line: str) -> dict:
     return output
 
 
-def convert_inline_config_to_separator_config(input: dict) -> Manuscript.SeparatorConfig:
+def _convert_inline_config_to_separator_config(input: dict) -> Manuscript.SeparatorConfig:
     """Converts a dict containing inline config into a SeparatorConfig object.
     """
     output = copy.deepcopy(SEPARATOR_CONFIG_DEFAULT)
@@ -289,7 +312,7 @@ def extract_properties(lines: Iterable[str]):
     return [output_lines, config]
 
 
-def convert_config_dict_to_object(config: dict) -> Manuscript.Config:
+def _convert_config_dict_to_object(config: dict) -> Manuscript.Config:
     """Converts a config dictionary as returned from extract_config into a Manuscript.Config.
 
     Uses the constants at the top of the file to do all necessary conversions.
@@ -322,4 +345,4 @@ def construct_manuscript(parsed_lines: Iterable[str], config: dict) -> Manuscrip
     The lines MUST have been stripped of config, had any indicators replaced, etc.
     config should be in the format returned by extract_config.
     """
-    return Manuscript(parsed_lines, convert_config_dict_to_object(config))
+    return Manuscript(parsed_lines, _convert_config_dict_to_object(config))
