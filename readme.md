@@ -55,15 +55,15 @@ Like any good open-source project, this one has a massive TODO list I'm working 
 	- [x] Add example
 	- [x] Add docs
 - Functionality
-	- [ ] Support chapter and part titles.
-	- [ ] Support un-numbered chapters.
-	- [ ] ... and remove the prologue special case.
+	- [X] Support chapter and part titles.
+	- [X] Support un-numbered chapters.
+	- [X] ... and remove the prologue special case.
 	- [ ] Make the single-file (short story) importer use the name of the file as a title if no title config is provided.
 	- [ ] Add configurable (optional) table of contents
 - Code quality
 	- [ ] Clean up TODOs in the code (a few are still lurking around)
 	- [x] Break up code into sub-packages
 	- [x] Clean up path shenanigans
-	- [ ] Add (more) unit tests :)
+	- [X] Add (more) unit tests :)
 - Appearance
 	- [ ] Introduce a better cover for when no cover is specified in config.
