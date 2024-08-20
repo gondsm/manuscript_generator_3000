@@ -93,7 +93,7 @@ def extract_relevant_lines_from_index_file(index_file: Path) -> Iterable[str]:
     return lines
 
 
-def list_markdown_files_in_folder(folder: Path):
+def _list_markdown_files_in_folder(folder: Path):
     files = []
     for path, _, filenames in folder.walk():
         for filename in filenames:
@@ -104,11 +104,11 @@ def list_markdown_files_in_folder(folder: Path):
     return files
 
 
-def extract_text_from_file(filename: Path, root_folder: Path) -> Iterable[str]:
+def _extract_text_from_file(filename: Path, root_folder: Path) -> Iterable[str]:
     """Finds the given file in the given folder (or subfolders) and returns its contents as a list of strings.
     """
     # TODO: bit wasteful to walk the directory for every single call to this function
-    known_files = list_markdown_files_in_folder(root_folder)
+    known_files = _list_markdown_files_in_folder(root_folder)
 
     # Extract the complete path from the known files
     # TODO: going from a pathlib object to string is a bit meh, surely pathlib has a cooler way of doing this.
@@ -147,7 +147,7 @@ def extract_text_from_files(lines: Iterable[str], root_folder: Path) -> Iterable
             filename = line.split(FILENAME_START)[-1].split(FILENAME_END)[0]
             logger.debug(f"Loading file: {filename}")
 
-            text = extract_text_from_file(filename, root_folder)
+            text = _extract_text_from_file(filename, root_folder)
 
             logger.debug(f"Loaded {len(text)} lines.")
 
@@ -168,11 +168,11 @@ def replace_indicators(lines: Iterable[str]) -> Manuscript.Content:
 
     for line in lines:
         if PART_INDICATOR in line:
-            separator_config = convert_inline_config_to_separator_config(extract_inline_config(line))
+            separator_config = _convert_inline_config_to_separator_config(_extract_inline_config(line))
             output.append(Manuscript.StartPart(separator_config))
 
         elif CHAPTER_INDICATOR in line:
-            separator_config = convert_inline_config_to_separator_config(extract_inline_config(line))
+            separator_config = _convert_inline_config_to_separator_config(_extract_inline_config(line))
             output.append(Manuscript.StartChapter(separator_config))
 
         elif any([indicator in line for indicator in SCENE_INDICATORS]):
@@ -208,7 +208,7 @@ def extract_global_config(lines: Manuscript.Content) -> [Iterable[str], Manuscri
     return [output, config]
 
 
-def extract_inline_config(line: str) -> dict:
+def _extract_inline_config(line: str) -> dict:
     """Extracts the config that may exist in part/chapter/etc separators.
     """
     output = {}
@@ -237,7 +237,7 @@ def extract_inline_config(line: str) -> dict:
     return output
 
 
-def convert_inline_config_to_separator_config(input: dict) -> Manuscript.SeparatorConfig:
+def _convert_inline_config_to_separator_config(input: dict) -> Manuscript.SeparatorConfig:
     """Converts a dict containing inline config into a SeparatorConfig object.
     """
     output = copy.deepcopy(SEPARATOR_CONFIG_DEFAULT)
@@ -289,7 +289,7 @@ def extract_properties(lines: Iterable[str]):
     return [output_lines, config]
 
 
-def convert_config_dict_to_object(config: dict) -> Manuscript.Config:
+def _convert_config_dict_to_object(config: dict) -> Manuscript.Config:
     """Converts a config dictionary as returned from extract_config into a Manuscript.Config.
 
     Uses the constants at the top of the file to do all necessary conversions.
@@ -322,4 +322,4 @@ def construct_manuscript(parsed_lines: Iterable[str], config: dict) -> Manuscrip
     The lines MUST have been stripped of config, had any indicators replaced, etc.
     config should be in the format returned by extract_config.
     """
-    return Manuscript(parsed_lines, convert_config_dict_to_object(config))
+    return Manuscript(parsed_lines, _convert_config_dict_to_object(config))

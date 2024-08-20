@@ -17,7 +17,7 @@ class TestExtractInlineConfig(unittest.TestCase):
         """
         # There's a break in this line, but no config
         line = "-- Chapter: this is some stuff I added"
-        output = innards.extract_inline_config(line)
+        output = innards._extract_inline_config(line)
 
         self.assertTrue(isinstance(output, dict))
         self.assertEqual(len(output), 0)
@@ -26,7 +26,7 @@ class TestExtractInlineConfig(unittest.TestCase):
         """Pull out a single config element.
         """
         line = "-- Chapter -- Title: This is a chapter title"
-        output = innards.extract_inline_config(line)
+        output = innards._extract_inline_config(line)
 
         self.assertTrue(isinstance(output, dict))
         self.assertEqual(len(output), 1)
@@ -36,7 +36,7 @@ class TestExtractInlineConfig(unittest.TestCase):
         """Pull out various config elements.
         """
         line = "-- Chapter -- Title: This is a chapter title -- Numbered: False"
-        output = innards.extract_inline_config(line)
+        output = innards._extract_inline_config(line)
 
         self.assertTrue(isinstance(output, dict))
         self.assertEqual(len(output), 2)
@@ -47,7 +47,7 @@ class TestExtractInlineConfig(unittest.TestCase):
         """The function should be robust to some variation around the separator (in case I feel frisky).
         """
         line = "-- Chapter: This is some irrelevant text -- Title: This is a chapter title -- Numbered: False"
-        output = innards.extract_inline_config(line)
+        output = innards._extract_inline_config(line)
 
         self.assertTrue(isinstance(output, dict))
         self.assertEqual(output["Title"], "This is a chapter title")
@@ -59,7 +59,7 @@ class TestConvertInlineConfigToSeparatorConfig(unittest.TestCase):
     def test_empty_dict(self):
         """Passing in an empty dictionary should return the default config for separators.
         """
-        output = innards.convert_inline_config_to_separator_config({})
+        output = innards._convert_inline_config_to_separator_config({})
 
         # Given an empty dict, we should have an instance of SeparatorConfig that is initialised with the default but IS
         # NOT the same instance as the default.
@@ -71,7 +71,7 @@ class TestConvertInlineConfigToSeparatorConfig(unittest.TestCase):
         """Passing in a dict with weird keys should behave the same as an empty dict.
         """
         input = {"sOmE_wEiRd_kEy": "sOmE_wEiRd_vAlUe"}
-        output = innards.convert_inline_config_to_separator_config(input)
+        output = innards._convert_inline_config_to_separator_config(input)
 
         self.assertTrue(isinstance(output, Manuscript.SeparatorConfig))
         self.assertEqual(output, innards.SEPARATOR_CONFIG_DEFAULT)
@@ -81,7 +81,7 @@ class TestConvertInlineConfigToSeparatorConfig(unittest.TestCase):
         """Gief title, get title
         """
         input = {"Title": "This is a chapter title"}
-        output = innards.convert_inline_config_to_separator_config(input)
+        output = innards._convert_inline_config_to_separator_config(input)
 
         self.assertTrue(isinstance(output, Manuscript.SeparatorConfig))
         self.assertEqual(output.title, "This is a chapter title")
@@ -91,7 +91,7 @@ class TestConvertInlineConfigToSeparatorConfig(unittest.TestCase):
         """Gief title, get title
         """
         input = {"Title": "This is a chapter title", "Numbered": "False"}
-        output = innards.convert_inline_config_to_separator_config(input)
+        output = innards._convert_inline_config_to_separator_config(input)
 
         self.assertTrue(isinstance(output, Manuscript.SeparatorConfig))
         self.assertEqual(output.title, "This is a chapter title")
