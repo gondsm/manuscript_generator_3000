@@ -7,7 +7,7 @@ from pathlib import Path
 import test_utils
 test_utils.finagle_dependencies()
 
-from manuscript_generator_3000.importers import obsidian_kanban_subheading_importer_innards as innards
+from manuscript_generator_3000.importers import markdown_importer_innards as innards
 from manuscript_generator_3000.manuscript import Manuscript
 
 

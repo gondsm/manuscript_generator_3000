@@ -7,7 +7,7 @@ import sys
 # use it "properly".)
 sys.path.append(str(Path(__file__).parents[2]))
 
-from manuscript_generator_3000.importers import obsidian_kanban_index_file_importer
+from manuscript_generator_3000.importers import markdown_index_file_importer
 from manuscript_generator_3000.exporters import markdown_exporter
 from manuscript_generator_3000.exporters import latex_pdf_exporter
 from manuscript_generator_3000.word_count import word_count
@@ -25,8 +25,8 @@ if __name__ == "__main__":
     # The root folder is where the script will look to find the files included in the index file.
     index_file = example_path / Path("The Unimaginative Software Engineer.md")
     root_folder = example_path
-    manuscript = obsidian_kanban_index_file_importer.load_manuscript_from_index_file(index_file,
-                                                                                     root_folder)
+    manuscript = markdown_index_file_importer.load_manuscript_from_index_file(index_file,
+                                                                              root_folder)
 
     # Word count
     # Once we hold a Manuscript object, we can do all sorts of things with it. For starters, we'll print out a word

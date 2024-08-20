@@ -6,7 +6,7 @@ import test_utils
 test_utils.finagle_dependencies()
 
 from manuscript_generator_3000.manuscript import Manuscript
-from manuscript_generator_3000.importers import obsidian_kanban_subheading_importer_innards
+from manuscript_generator_3000.importers import markdown_importer_innards
 
 class TestManuscript(unittest.TestCase):
     def test_construction(self):
@@ -26,7 +26,7 @@ class TestIsControlType(unittest.TestCase):
         """
         lines = [
             "text",
-            Manuscript.StartChapter(obsidian_kanban_subheading_importer_innards.SEPARATOR_CONFIG_DEFAULT),
+            Manuscript.StartChapter(markdown_importer_innards.SEPARATOR_CONFIG_DEFAULT),
             "more text"
         ]
 
