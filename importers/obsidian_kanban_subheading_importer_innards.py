@@ -67,38 +67,12 @@ TITLE_KEY = "Title"
 COVER_KEY = "Cover"
 
 
-def extract_relevant_section(guide_file: Path, subheading: str, delimiter_mode: DelimiterMode) -> Iterable[str]:
-    """Extracts the relevant text from the given markdown subheading.
+def extract_relevant_lines_from_index_file(index_file: Path, delimiter_mode: DelimiterMode) -> Iterable[str]:
+    """Extracts the relevant text from the given markdown index file.
+
+    Relevant lines are those which contain markers like the start of config or a filename.
 
     Returns the text verbatim as a list of lines, to be post-processed later.
-    """
-    lines = []
-    in_region_of_interest = False
-    with open(guide_file, "r", encoding="utf-8") as in_file:
-        for line in in_file:
-            if line[0:3] == "## " and subheading in line:
-                logger.info(f"Found the relevant subheading for {subheading} at this line:")
-                logger.info(line.strip())
-                in_region_of_interest = True
-                continue
-            elif line.strip() == "":
-                # Disregard empty lines
-                continue
-            elif line[0:3] == "## " and in_region_of_interest:
-                in_region_of_interest = False
-                break
-            # We only pull in lines that either contain config or file name to include.
-            elif in_region_of_interest and (CONFIG_START[delimiter_mode] in line or FILENAME_START[delimiter_mode] in line):
-                lines.append(line)
-
-    return lines
-
-
-def extract_relevant_lines_from_index_file(index_file: Path, delimiter_mode: DelimiterMode) -> Iterable[str]:
-    """Similar to extract_relevant_section, but from an index file instead of a guide file.
-
-    Since an index file won't have subheadings (it will represent a single manuscript), we need only to pull in all
-    lines that contain either config or files to include.
     """
     lines = []
     with open(index_file, "r", encoding="utf-8") as in_file:
