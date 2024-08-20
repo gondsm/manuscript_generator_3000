@@ -88,7 +88,7 @@ def extract_relevant_lines_from_index_file(index_file: Path) -> Iterable[str]:
                 continue
             # We only pull in lines that either contain config or file name to include.
             elif CONFIG_START in line or FILENAME_START in line:
-                lines.append(line)
+                lines.append(line.strip())
 
     return lines
 
