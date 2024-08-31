@@ -42,6 +42,18 @@ def tidy_up_output_dir(out_directory: Path) -> None:
         return
 
 
+def tidy_up_latex_artifacts(latex_filename: str, out_directory: Path) -> None:
+    """Removes leftover LaTeX outputs post-compilation.
+    """
+    base_name = Path(latex_filename).stem
+    latex_artifacts = [".aux", ".log", ".tex", ".out"]
+
+    for ext in latex_artifacts:
+        to_remove = (out_directory / base_name).with_suffix(ext)
+        logger.info(f"Removing leftover file: {to_remove}")
+        to_remove.unlink()
+
+
 def build_latex(latex_file: Path, out_directory: Path) -> None:
     """Calls pdflatex to build the given file in the given directory
     """

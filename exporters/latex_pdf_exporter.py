@@ -9,15 +9,16 @@ def export(manuscript: Manuscript,
            illustration_dir: Path,
            out_directory: Path,
            out_name: str,
-           babel_language: str) -> None:
+           babel_language: str,
+           remove_artifacts: bool) -> None:
     """Export the given manuscript to a PDF via LaTeX.
 
     Requires that pdflatex be in the PATH and accessible by this script.
 
     Note:
     * illustration_dir should contain any pictures included in the text (namely the cover specified in manuscript).
-    * out_directory will be used as an output, and if nuke_out_directory is set, then it is emptied out before work
-    starts.
+    * out_directory will be used as an output.
+    * If remove_artifacts is set, then at the end this exporter will remove intermediate artifacts.
     * Internally, this exporter relies on pdflatex and pandoc being available in the PATH.
     """
     innards.tidy_up_output_dir(out_directory)
@@ -29,3 +30,6 @@ def export(manuscript: Manuscript,
                                                      babel_language)
     innards.write_latex_file(full_latex, out_directory / out_name, out_directory)
     innards.build_latex(out_directory / out_name, out_directory)
+
+    if remove_artifacts:
+        innards.tidy_up_latex_artifacts(out_name, out_directory)

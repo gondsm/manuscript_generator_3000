@@ -10,6 +10,7 @@ sys.path.append(str(Path(__file__).parents[2]))
 from manuscript_generator_3000.importers import markdown_index_file_importer
 from manuscript_generator_3000.exporters import markdown_exporter
 from manuscript_generator_3000.exporters import latex_pdf_exporter
+from manuscript_generator_3000.exporters import epub_exporter
 from manuscript_generator_3000.word_count import word_count
 
 
@@ -48,7 +49,14 @@ def compile():
                               illustrations_folder,
                               output_path,
                               latex_file,
-                              babel_language)
+                              babel_language,
+                              True)
+
+    # EPUB export (via pandoc)
+    epub_file = output_path / "output.epub"
+    epub_exporter.export(manuscript,
+                         illustrations_folder,
+                         epub_file)
 
     # We can also export to markdown, which essentially means we've just concatenated our entire manuscript into a
     # single file. I find this useful as an intermediate format to export into other things (pandoc is awesome) or to
