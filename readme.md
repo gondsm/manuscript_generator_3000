@@ -60,6 +60,7 @@ Like any good open-source project, this one has a massive TODO list I'm working 
 	- [X] ... and remove the prologue special case.
 	- [ ] Make the single-file (short story) importer use the name of the file as a title if no title config is provided.
 	- [ ] Add configurable (optional) table of contents
+	- [ ] Make the exporters thinner wrappers around pandoc (pandoc is so fully-featured, I don't need to replicate so much of it)
 - Code quality
 	- [ ] Clean up TODOs in the code (a few are still lurking around)
 	- [x] Break up code into sub-packages
