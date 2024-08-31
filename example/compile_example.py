@@ -13,7 +13,7 @@ from manuscript_generator_3000.exporters import latex_pdf_exporter
 from manuscript_generator_3000.word_count import word_count
 
 
-if __name__ == "__main__":
+def compile():
     logging.basicConfig(level=logging.INFO)
 
     package_path = Path(__file__).parents[1]
@@ -33,7 +33,7 @@ if __name__ == "__main__":
     # count.
     word_count.log_word_count(manuscript)
 
-    # PDF export (via LaTeX)
+    # PDF export (via markdown -> pandoc -> LaTeX)
     # We can export our manuscript into a PDF (which is what I usually do to mark for edits.)
     # To do that, we need to define a few more params.
     # This LaTeX file will contain the output of pandoc converting the markdown output into the latex template, and the
@@ -55,3 +55,7 @@ if __name__ == "__main__":
     # have a broader overview of the manuscript.
     out_md_file = output_path / Path("output.md")
     markdown_exporter.export(manuscript, out_md_file)
+
+
+if __name__ == "__main__":
+    compile()
