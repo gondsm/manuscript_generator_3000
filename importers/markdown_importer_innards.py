@@ -65,6 +65,7 @@ SEPARATOR_CONFIG_DEFAULT = Manuscript.SeparatorConfig("", True)
 AUTHOR_KEY = "Author"
 TITLE_KEY = "Title"
 COVER_KEY = "Cover"
+SCENE_SEPARATOR_TYPE_KEY = "Scene Separator"
 
 
 def extract_relevant_lines_from_index_file(index_file: Path, delimiter_mode: DelimiterMode) -> Iterable[str]:
@@ -294,6 +295,7 @@ def _convert_config_dict_to_object(config: dict) -> Manuscript.Config:
     author = "unnamed author"
     title = "untitled"
     cover = ""
+    scene_separator_type = "normal"
 
     if AUTHOR_KEY in config:
         author = config[AUTHOR_KEY]
@@ -307,10 +309,14 @@ def _convert_config_dict_to_object(config: dict) -> Manuscript.Config:
         cover = config[COVER_KEY]
         logger.info(f"Adding cover to config: {cover}")
 
+    if SCENE_SEPARATOR_TYPE_KEY in config:
+        scene_separator_type = config[SCENE_SEPARATOR_TYPE_KEY]
+        logger.info(f"Adding scene separator type to config: {scene_separator_type}")
+
     time = datetime.datetime.now()
     logger.info(f"Adding time to config: {time}")
 
-    return Manuscript.Config(title, author, cover, time)
+    return Manuscript.Config(title, author, cover, time, scene_separator_type)
 
 
 def construct_manuscript(parsed_lines: Iterable[str], config: dict) -> Manuscript:
