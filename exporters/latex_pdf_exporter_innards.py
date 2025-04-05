@@ -148,7 +148,7 @@ def convert_to_latex(manuscript: Manuscript) -> str:
     storage calls. Maybe. Probably.
     """
     # Start by converting the content to valid markdown, to feed into... something else.
-    markdown_content = markdown_exporter_innards.convert_content_to_lines(manuscript.content)
+    markdown_content = markdown_exporter_innards.convert_content_to_lines(manuscript)
     pandoc_input = markdown_exporter_innards.concatenate_content_lines_into_string(markdown_content).encode('utf-8')
 
     pandoc_cmd = ["pandoc",

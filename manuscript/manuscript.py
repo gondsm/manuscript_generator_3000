@@ -48,6 +48,11 @@ class Manuscript:
         author: str
         cover: Path
         time: datetime.datetime
+        # This controls the rendering type for scene separators.
+        # "normal" should yield visible scene separators, "blank" should yield invisible separators, and "none" should
+        # do what it says on the tin.
+        # TODO: should this be another enum?
+        scene_separator_type: str
 
     @dataclass
     class SeparatorConfig:

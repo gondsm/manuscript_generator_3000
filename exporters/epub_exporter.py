@@ -23,7 +23,7 @@ def export(manuscript: Manuscript,
 
     # TODO: for the moment, we don't support parts when exporting to epub, we we tell the markdown side of the exporter
     # to straight-up ignore them.
-    markdown_content = markdown_exporter_innards.convert_content_to_lines(manuscript.content, ignore_parts=True)
+    markdown_content = markdown_exporter_innards.convert_content_to_lines(manuscript, ignore_parts=True)
     pandoc_input = markdown_exporter_innards.concatenate_content_lines_into_string(markdown_content).encode('utf-8')
 
     # This whole thing revolves around pandoc
