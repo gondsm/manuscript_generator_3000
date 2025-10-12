@@ -7,9 +7,10 @@ from ..manuscript import Manuscript
 MD_HEADING_1 = "#"
 MD_HEADING_2 = "##"
 MD_SCENE_SEPARATORS = {
-    "normal": "---",    # The usual hrule;
-    "blank": "$~$",     # A blank line (with invisible space);
-    "none": ""}         # A blank line, which the exporters will eat.
+    "normal": "---",                        # The usual hrule;
+    "blank": "$~$",                         # A blank line (with invisible space);
+    "asterism": "\centerline{$*\ *\ *$}",   # An approximation of an asterism;
+    "none": ""}                             # A blank line, which the exporters will eat.
 MD_UNNUMBERED_INDICATOR = "{.unnumbered}"
 
 
