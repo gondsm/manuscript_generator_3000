@@ -58,12 +58,13 @@ def convert_content_to_lines(manuscript: Manuscript, ignore_parts: bool = False)
     config = manuscript.config
 
     for line in content:
-        if isinstance(line, Manuscript.StartPart) and not ignore_parts:
-            # TODO: Perhaps a helper function?
-            converted_line = MD_HEADING_1 + " " + convert_config_to_markdown(line.config)
-            output_lines.append(converted_line)
-        if isinstance(line, Manuscript.StartChapter):
-            # TODO: Perhaps a helper function?
+        if isinstance(line, Manuscript.StartPart):
+            # If we're not doing parts, we don't add anything to the output
+            if not ignore_parts:
+                converted_line = MD_HEADING_1 + " " + convert_config_to_markdown(line.config)
+                output_lines.append(converted_line)
+        elif isinstance(line, Manuscript.StartChapter):
+            # The level of a chapter changes depending on whether we're doing parts. It's top level if not.
             if ignore_parts:
                 converted_line = MD_HEADING_1 + " " + convert_config_to_markdown(line.config)
             else:
