@@ -26,8 +26,7 @@ def compile():
     # The root folder is where the script will look to find the files included in the index file.
     index_file = example_path / Path("The Unimaginative Software Engineer.md")
     root_folder = example_path
-    manuscript = markdown_index_file_importer.load_manuscript_from_index_file(index_file,
-                                                                              root_folder)
+    manuscript = markdown_index_file_importer.load_manuscript_from_index_file(index_file, root_folder)
 
     # Word count
     # Once we hold a Manuscript object, we can do all sorts of things with it. For starters, we'll print out a word
@@ -63,6 +62,32 @@ def compile():
     # have a broader overview of the manuscript.
     out_md_file = output_path / Path("output.md")
     markdown_exporter.export(manuscript, out_md_file)
+
+    # Sometimes it's useful to split a manuscript into parts and save them separately for revision.
+    # This is for those times when you find yourself in a Tolkien situation, where you set out to write one book
+    # and end up with 3, but still want to fool yourself by keeping them in one index file.
+    # We can then export those as well.
+    parts = manuscript.split_into_parts()
+    for idx, part in enumerate(parts, start=1):
+        # Word count per part
+        word_count.log_word_count(part)
+
+        # LaTeX/PDF export per part
+        part_latex_name = f"output_part_{idx}.tex"
+        latex_pdf_exporter.export(part,
+                                  latex_template,
+                                  illustrations_folder,
+                                  output_path,
+                                  part_latex_name,
+                                  babel_language,
+                                  True)
+
+        part_base = f"output_part_{idx}"
+        part_epub = output_path / f"{part_base}.epub"
+        epub_exporter.export(part, illustrations_folder, part_epub)
+
+        part_md = output_path / f"{part_base}.md"
+        markdown_exporter.export(part, part_md)
 
 
 if __name__ == "__main__":

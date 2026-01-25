@@ -22,7 +22,17 @@ class TestConvertContentToLines(unittest.TestCase):
             "more text"
         ]
 
-        output = innards.convert_content_to_lines(content)
+        cfg = Manuscript.Config(
+            title="title",
+            author="author",
+            cover="cover",
+            time=None,
+            scene_separator_type="normal",
+        )
+
+        m = Manuscript(content, cfg)
+
+        output = innards.convert_content_to_lines(m)
 
         self.assertEqual(len(output), 3)
         self.assertEqual(output[1], "## Test Title {.unnumbered}")

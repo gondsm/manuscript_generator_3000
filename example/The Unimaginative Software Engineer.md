@@ -18,6 +18,7 @@ Config keys, as understood by the tool, are encoded in the `- 📚 -- key: value
 
 In a similar vein, the tool looks for part and chapter breaks in the following format:
 
+- 📚 -- Part -- Title: Problem and Solution
 - 📚 -- Chapter
 
 So from this point onwards, the tool has introduced a chapter break in our manuscript.
@@ -32,12 +33,15 @@ Content is added by including other files:
 
 When the tool finds the line above, it will add it to the manuscript, so now our manuscript has a chapter and one entire file's worth of content. The content in that file can be formatted in any way Markdown can be, including *emphasis* and **bold**.
 
-There is also no need for text in your manuscript definition. You can simply list out your chapters and files:
+There is also no need for text in your manuscript definition. You can simply list out your parts, chapters and files.
 
 - 📚 -- Chapter
 - 📚 [[020 - Huzzah, a solution!]]
+- 📚 -- Part -- Title: Code
 - 📚 -- Chapter
 - 📚 [[030 - A Flurry of Code]]
+- 📚 -- Chapter
+- 📚 [[040 - Maintenance]]
 
 Chapters can contain more than one file, of course. The tool will automatically add scene breaks in chapters with multiple file. Similarly, files can also contain scene breaks in themselves; the markdown importer looks for these as a line containing only a `---`.
 

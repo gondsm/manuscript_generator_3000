@@ -96,3 +96,46 @@ class Manuscript:
     # Lastly, the things that this actually contains.
     content: Content
     config: Config
+
+    def split_into_parts(self) -> List["Manuscript"]:
+        """Split this Manuscript into per-Part Manuscript objects.
+
+        Returns a list of Manuscript objects corresponding to each `StartPart` block
+        found in `self.content`. Each part's `config.title` is set to
+        "<original title> - <part title>" when a title is present on the separator.
+        """
+        parts: List[Manuscript] = []
+
+        content = self.content
+
+        # Find indices of part separators
+        part_indices = [i for i, elem in enumerate(content) if isinstance(elem, Manuscript.StartPart)]
+
+        for idx_i, start_idx in enumerate(part_indices):
+            end_idx = part_indices[idx_i + 1] if idx_i + 1 < len(part_indices) else len(content)
+            part_content = content[start_idx:end_idx]
+
+            # Determine title from the StartPart separator if available
+            part_title = None
+            first_elem = part_content[0] if part_content else None
+            if isinstance(first_elem, Manuscript.StartPart):
+                part_title = first_elem.config.title
+
+            # Create a new Config for the part manuscript, prefixing the original title
+            # with the part title when present.
+            original_cfg = self.config
+            if part_title:
+                title = f"{original_cfg.title} - {part_title}"
+            else:
+                title = original_cfg.title
+
+            part_config = Manuscript.Config(title,
+                                            original_cfg.author,
+                                            original_cfg.cover,
+                                            original_cfg.time,
+                                            original_cfg.scene_separator_type)
+
+            part_manuscript = Manuscript(part_content, part_config)
+            parts.append(part_manuscript)
+
+        return parts
