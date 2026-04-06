@@ -46,11 +46,8 @@ def convert_config_to_markdown(config: Manuscript.SeparatorConfig) -> str:
     return output
 
 
-def convert_content_to_lines(manuscript: Manuscript, ignore_parts: bool = False) -> Iterable[str]:
+def convert_content_to_lines(manuscript: Manuscript) -> Iterable[str]:
     """Takes the content of a Manuscript and turns into valid lines of Markdown.
-
-    if ignore_parts is set, then StartPart markers will be ignored, and StartChapter markers will contain the top-level
-    heading instead.
     """
     output_lines = []
 
@@ -60,15 +57,10 @@ def convert_content_to_lines(manuscript: Manuscript, ignore_parts: bool = False)
     for line in content:
         if isinstance(line, Manuscript.StartPart):
             # If we're not doing parts, we don't add anything to the output
-            if not ignore_parts:
-                converted_line = MD_HEADING_1 + " " + convert_config_to_markdown(line.config)
-                output_lines.append(converted_line)
+            converted_line = MD_HEADING_1 + " " + convert_config_to_markdown(line.config)
+            output_lines.append(converted_line)
         elif isinstance(line, Manuscript.StartChapter):
-            # The level of a chapter changes depending on whether we're doing parts. It's top level if not.
-            if ignore_parts:
-                converted_line = MD_HEADING_1 + " " + convert_config_to_markdown(line.config)
-            else:
-                converted_line = MD_HEADING_2 + " " + convert_config_to_markdown(line.config)
+            converted_line = MD_HEADING_2 + " " + convert_config_to_markdown(line.config)
             output_lines.append(converted_line)
         elif isinstance(line, Manuscript.BreakScene):
             output_lines.append(MD_SCENE_SEPARATORS[config.scene_separator_type])
