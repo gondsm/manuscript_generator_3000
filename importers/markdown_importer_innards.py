@@ -264,8 +264,9 @@ def extract_properties(lines: Iterable[str]):
     properties_read = False
     config = {}
     output_lines = []
-    for line in lines:
-        if line.strip() == "---" and not in_properties and not properties_read:
+    for i, line in enumerate(lines):
+        # Properties _must_ start on the first line of the file.
+        if i == 0 and line.strip() == "---" and not in_properties and not properties_read:
             in_properties = True
             continue
 
@@ -275,7 +276,7 @@ def extract_properties(lines: Iterable[str]):
             properties_read = True
             continue
 
-        if in_properties:
+        if line != "\n" and in_properties:
             key, value = line.split(":")
             config[key.strip()] = value.strip()
             continue
