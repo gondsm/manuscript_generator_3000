@@ -283,8 +283,6 @@ def extract_properties(lines: Iterable[str]):
 
         output_lines.append(line)
 
-    logger.info(f"Read properties from file: {config}")
-
     return [output_lines, config]
 
 
