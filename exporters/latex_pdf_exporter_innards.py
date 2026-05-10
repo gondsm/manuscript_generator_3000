@@ -2,6 +2,7 @@ from pathlib import Path
 import logging
 import subprocess
 import os
+import sys
 from collections.abc import Iterable
 
 from ..manuscript import Manuscript
@@ -79,10 +80,10 @@ def build_latex(latex_file: Path, out_directory: Path) -> None:
     logger.info("Calling pdflatex!")
     logger.info(f"Command: {pdflatex_cmd}")
     logger.info("Brace for lots of terminal noise...")
-    print("=======================================================================================")
-    subprocess.run(pdflatex_cmd, check=True)
-    subprocess.run(pdflatex_cmd, check=True)
-    print("=======================================================================================")
+    logger.info("=======================================================================================")
+    subprocess.run(pdflatex_cmd, check=True, stdout=sys.stdout, stderr=sys.stdout)
+    subprocess.run(pdflatex_cmd, check=True, stdout=sys.stdout, stderr=sys.stdout)
+    logger.info("=======================================================================================")
 
     logger.info(f"CD-ing out of {os.getcwd()}")
     logger.info(f"... and into {old_working_dir}")
