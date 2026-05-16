@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import datetime
 from typing import List, Union
 
@@ -96,6 +96,7 @@ class Manuscript:
     # Lastly, the things that this actually contains.
     content: Content
     config: Config
+    original_files: List[Path] = field(default_factory=list)
 
     def split_into_parts(self) -> List["Manuscript"]:
         """Split this Manuscript into per-Part Manuscript objects.
@@ -135,7 +136,8 @@ class Manuscript:
                                             original_cfg.time,
                                             original_cfg.scene_separator_type)
 
-            part_manuscript = Manuscript(part_content, part_config)
+            # TODO: Part manuscripts won't have original files for now, we'd need to fish them out or hold them differently.
+            part_manuscript = Manuscript(part_content, part_config, None)
             parts.append(part_manuscript)
 
         return parts

@@ -99,14 +99,9 @@ def _list_markdown_files_in_folder(folder: Path):
     return files
 
 
-def _extract_text_from_file(filename: Path, root_folder: Path) -> Iterable[str]:
-    """Finds the given file in the given folder (or subfolders) and returns its contents as a list of strings.
-    """
-    # TODO: bit wasteful to walk the directory for every single call to this function
+def _find_markdown_file_path(filename: Path, root_folder: Path) -> Path:
     known_files = _list_markdown_files_in_folder(root_folder)
 
-    # Extract the complete path from the known files
-    # TODO: going from a pathlib object to string is a bit meh, surely pathlib has a cooler way of doing this.
     full_path = [f for f in known_files if filename in str(f)]
 
     if len(full_path) != 1:
@@ -114,7 +109,14 @@ def _extract_text_from_file(filename: Path, root_folder: Path) -> Iterable[str]:
         logger.error(f"Found: {full_path}")
         raise ValueError
 
-    full_path = full_path[0]
+    return full_path[0]
+
+
+def _extract_text_from_file(filename: Path, root_folder: Path) -> Iterable[str]:
+    """Finds the given file in the given folder (or subfolders) and returns its contents as a list of strings.
+    """
+    # TODO: bit wasteful to walk the directory for every single call to this function
+    full_path = _find_markdown_file_path(filename, root_folder)
 
     # TODO: possibly not the best way to go from text file to list of lines.
     output = []
@@ -130,28 +132,31 @@ def _extract_text_from_file(filename: Path, root_folder: Path) -> Iterable[str]:
     return output
 
 
-def extract_text_from_files(lines: Iterable[str], root_folder: Path, delimiter_mode: DelimiterMode) -> Iterable[str]:
+def extract_text_from_files(lines: Iterable[str], root_folder: Path, delimiter_mode: DelimiterMode) -> tuple[Iterable[str], list[Path]]:
     """Given a sequence of lines as extracted by extract_relevant_section, pull text out of the given filenames.
 
     This replaces (not in place) every reference to a filename in the lines with a sequence of lines that contain the
     text.
     """
     output = []
+    original_files = []
     for line in lines:
         if FILENAME_START[delimiter_mode] in line and FILENAME_END in line:
             filename = line.split(FILENAME_START[delimiter_mode])[-1].split(FILENAME_END)[0]
             logger.debug(f"Loading file: {filename}")
 
+            file_path = _find_markdown_file_path(filename, root_folder)
             text = _extract_text_from_file(filename, root_folder)
 
-            logger.debug(f"Loaded {len(text)} lines.")
+            logger.debug(f"Loaded {len(text)} lines from {file_path}.")
 
             output.extend(text)
+            original_files.append(file_path)
 
         else:
             output.append(line)
 
-    return output
+    return output, original_files
 
 
 def replace_indicators(lines: Iterable[str]) -> Manuscript.Content:
@@ -318,10 +323,10 @@ def _convert_config_dict_to_object(config: dict) -> Manuscript.Config:
     return Manuscript.Config(title, author, cover, time, scene_separator_type)
 
 
-def construct_manuscript(parsed_lines: Iterable[str], config: dict) -> Manuscript:
+def construct_manuscript(parsed_lines: Iterable[str], config: dict, original_files: list[Path] | None = None) -> Manuscript:
     """Takes a list of parsed lines and a config dict and constructs a Manuscript object.
 
     The lines MUST have been stripped of config, had any indicators replaced, etc.
     config should be in the format returned by extract_config.
     """
-    return Manuscript(parsed_lines, _convert_config_dict_to_object(config))
+    return Manuscript(parsed_lines, _convert_config_dict_to_object(config), original_files or [])
