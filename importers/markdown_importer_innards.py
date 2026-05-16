@@ -264,6 +264,8 @@ def extract_properties(lines: Iterable[str]):
     """Extracts the config in the given lines into a dictionary, assuming markdown properties as known in Obsidian.
 
     Returns [lines_without_config, config]
+
+    TODO: What we should _really_ be doing here is extracting the frontmatter and using yaml to load it.
     """
     in_properties = False
     properties_read = False
@@ -281,7 +283,7 @@ def extract_properties(lines: Iterable[str]):
             properties_read = True
             continue
 
-        if line != "\n" and in_properties:
+        if line != "\n" and len(line.split(":")) == 2 and in_properties:
             key, value = line.split(":")
             config[key.strip()] = value.strip()
             continue
