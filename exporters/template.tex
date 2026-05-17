@@ -31,6 +31,15 @@
 % Dots in ToC
 \renewcommand{\cftchapdotsep}{\cftdotsep}
 
+% Make \chapter* update header marks
+\makeatletter
+\let\orig@schapter\@schapter
+\def\@schapter#1{%
+  \orig@schapter{#1}%
+  \markboth{\MakeUppercase{#1}}{}%
+}
+\makeatother
+
 \begin{document}
   % Title page
   \begin{titlepage}
