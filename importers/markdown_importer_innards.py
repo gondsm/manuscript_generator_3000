@@ -102,14 +102,29 @@ def _list_markdown_files_in_folder(folder: Path):
 def _find_markdown_file_path(filename: Path, root_folder: Path) -> Path:
     known_files = _list_markdown_files_in_folder(root_folder)
 
-    full_path = [f for f in known_files if filename in str(f)]
+    # Match on the exact file stem rather than a substring of the full path
+    matches = [f for f in known_files if f.stem == str(filename)]
 
-    if len(full_path) != 1:
-        logger.error(f"Found an unexpected amount of full paths for filename {filename}!")
-        logger.error(f"Found: {full_path}")
-        raise ValueError
+    # We build a clear, actionable message for both failure modes and put it on the exception itself.
+    if len(matches) == 0:
+        message = (
+            f"No markdown file found for reference [[{filename}]] under '{root_folder}'. "
+            f"Check the index file for a typo or a link to a file that does not exist."
+        )
+        logger.error(message)
+        raise ValueError(message)
 
-    return full_path[0]
+    if len(matches) > 1:
+        formatted_matches = "\n".join(f"  - {m}" for m in matches)
+        message = (
+            f"Reference [[{filename}]] under '{root_folder}' ambiguously matches {len(matches)} files:\n"
+            f"{formatted_matches}\n"
+            f"Rename the file(s) so that exactly one has this stem, or make the reference more specific."
+        )
+        logger.error(message)
+        raise ValueError(message)
+
+    return matches[0]
 
 
 def _extract_text_from_file(filename: Path, root_folder: Path) -> Iterable[str]:

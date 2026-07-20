@@ -1,4 +1,5 @@
 import unittest
+import tempfile
 from typing import List
 from pathlib import Path
 
@@ -404,6 +405,72 @@ class TestExtractRelevantLinesFromIndexFileEmojiMode(unittest.TestCase):
         # We should have the one relevant line
         self.assertEqual(len(relevant_lines), 2)
         self.assertEqual(relevant_lines, relevant_lines)
+
+
+class TestFindMarkdownFilePath(unittest.TestCase):
+    """Tests for resolving a wikilink reference to a single markdown file on disk.
+    """
+
+    def setUp(self) -> None:
+        super().setUp()
+        self._tmp_dir = tempfile.TemporaryDirectory()
+        self.root_folder = Path(self._tmp_dir.name)
+
+    def tearDown(self) -> None:
+        super().tearDown()
+        self._tmp_dir.cleanup()
+
+    def _touch(self, relative_path: str) -> Path:
+        """Creates an (empty) markdown file at the given path relative to the root folder.
+        """
+        full_path = self.root_folder / relative_path
+        full_path.parent.mkdir(parents=True, exist_ok=True)
+        full_path.write_text("", encoding="utf-8")
+        return full_path
+
+    def test_single_match(self):
+        """A reference that maps to exactly one file should resolve to that file.
+        """
+        expected = self._touch("Text/010 - Example.md")
+
+        output = innards._find_markdown_file_path(Path("010 - Example"), self.root_folder)
+
+        self.assertEqual(output, expected)
+
+    def test_substring_is_not_a_match(self):
+        """A reference must match on the exact file stem, not on a substring.
+        """
+        expected = self._touch("Text/010 - Example.md")
+        # This companion file contains the reference as a substring but has a different stem.
+        self._touch("Zettelkasten/010 - Example - ZK Links.md")
+
+        output = innards._find_markdown_file_path(Path("010 - Example"), self.root_folder)
+
+        self.assertEqual(output, expected)
+
+    def test_no_match_raises(self):
+        """A reference that matches no file should raise, naming the missing reference.
+        """
+        self._touch("Text/010 - Example.md")
+
+        with self.assertRaises(ValueError) as context:
+            innards._find_markdown_file_path(Path("999 - Does Not Exist"), self.root_folder)
+
+        self.assertIn("999 - Does Not Exist", str(context.exception))
+
+    def test_ambiguous_match_raises(self):
+        """A reference whose exact stem exists in two folders should raise, listing both files.
+        """
+        first = self._touch("Text/010 - Example.md")
+        second = self._touch("Backup/010 - Example.md")
+
+        with self.assertRaises(ValueError) as context:
+            innards._find_markdown_file_path(Path("010 - Example"), self.root_folder)
+
+        message = str(context.exception)
+        self.assertIn("010 - Example", message)
+        self.assertIn(str(first), message)
+        self.assertIn(str(second), message)
 
 
 if __name__ == '__main__':
