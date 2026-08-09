@@ -28,6 +28,9 @@ PART_INDICATOR = "-- Part"
 CHAPTER_INDICATOR = "-- Chapter"
 SCENE_INDICATORS = ["---", "- - -"]
 
+# A preamble is delimited by this sequence at the very top of a file.
+PREAMBLE_DELIMITER = "---"
+
 # If a line contains with FILENAME_START (depending on mode) and ends with FILENAME_END, then whatever is in the middle has to be a file in
 # the given root folder.
 FILENAME_START = {
@@ -127,11 +130,18 @@ def _find_markdown_file_path(filename: Path, root_folder: Path) -> Path:
     return matches[0]
 
 
-def _extract_text_from_file(filename: Path, root_folder: Path) -> Iterable[str]:
+def _extract_text_from_file(filename: Path, root_folder: Path, ignore_preamble: bool) -> Iterable[str]:
     """Finds the given file in the given folder (or subfolders) and returns its contents as a list of strings.
+
+    If ignore_preamble is set, a properties block at the top of the file is dropped.
     """
     # TODO: bit wasteful to walk the directory for every single call to this function
     full_path = _find_markdown_file_path(filename, root_folder)
+
+    # The preamble can only start on the first (non-empty) line of the file, so we stop looking for it as soon as we
+    # come across any other line.
+    looking_for_preamble = ignore_preamble
+    in_preamble = False
 
     # TODO: possibly not the best way to go from text file to list of lines.
     output = []
@@ -142,12 +152,24 @@ def _extract_text_from_file(filename: Path, root_folder: Path) -> Iterable[str]:
                 # Disregard empty lines
                 continue
 
+            if in_preamble:
+                if stripped == PREAMBLE_DELIMITER:
+                    in_preamble = False
+                continue
+
+            if looking_for_preamble:
+                looking_for_preamble = False
+                if stripped == PREAMBLE_DELIMITER:
+                    in_preamble = True
+                    continue
+
             output.append(stripped)
 
     return output
 
 
-def extract_text_from_files(lines: Iterable[str], root_folder: Path, delimiter_mode: DelimiterMode) -> tuple[Iterable[str], list[Path]]:
+def extract_text_from_files(lines: Iterable[str], root_folder: Path, delimiter_mode: DelimiterMode,
+                            ignore_preamble: bool) -> tuple[Iterable[str], list[Path]]:
     """Given a sequence of lines as extracted by extract_relevant_section, pull text out of the given filenames.
 
     This replaces (not in place) every reference to a filename in the lines with a sequence of lines that contain the
@@ -161,7 +183,7 @@ def extract_text_from_files(lines: Iterable[str], root_folder: Path, delimiter_m
             logger.debug(f"Loading file: {filename}")
 
             file_path = _find_markdown_file_path(filename, root_folder)
-            text = _extract_text_from_file(filename, root_folder)
+            text = _extract_text_from_file(filename, root_folder, ignore_preamble)
 
             logger.debug(f"Loaded {len(text)} lines from {file_path}.")
 

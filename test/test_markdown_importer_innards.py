@@ -473,5 +473,46 @@ class TestFindMarkdownFilePath(unittest.TestCase):
         self.assertIn(str(second), message)
 
 
+class TestExtractTextFromFile(unittest.TestCase):
+    """Tests for pulling the text out of a single markdown file.
+    """
+
+    def setUp(self) -> None:
+        super().setUp()
+        self._tmp_dir = tempfile.TemporaryDirectory()
+        self.root_folder = Path(self._tmp_dir.name)
+
+    def tearDown(self) -> None:
+        super().tearDown()
+        self._tmp_dir.cleanup()
+
+    def test_ignore_preamble(self):
+        """The preamble should only be dropped when we ask for it, and the rest of the text should be untouched.
+        """
+        content = [
+            "---",
+            "Title: Some Title",
+            "---",
+            "",
+            "This is the first line",
+            "---",
+            "This is the second line",
+        ]
+        (self.root_folder / "010 - Example.md").write_text("\n".join(content), encoding="utf-8")
+
+        text = ["This is the first line", "---", "This is the second line"]
+
+        with_preamble = innards._extract_text_from_file(Path("010 - Example"), self.root_folder,
+                                                        ignore_preamble=False)
+        without_preamble = innards._extract_text_from_file(Path("010 - Example"), self.root_folder,
+                                                           ignore_preamble=True)
+
+        # Without the flag we get everything, including the preamble and its delimiters.
+        self.assertEqual(with_preamble, ["---", "Title: Some Title", "---"] + text)
+
+        # With the flag, the preamble is gone but the scene break further down survives.
+        self.assertEqual(without_preamble, text)
+
+
 if __name__ == '__main__':
     unittest.main()
