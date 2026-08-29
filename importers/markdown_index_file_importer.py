@@ -32,8 +32,9 @@ def load_manuscript_from_index_file(index_file: Path, root_folder: Path, delimit
     logger.info(f"Extracted index with {len(raw_lines)} lines.")
 
     logger.info("Extracting text from files.")
-    lines_with_text, referenced_files = innards.extract_text_from_files(raw_lines, root_folder, delimiter_mode,
-                                                                       ignore_preamble=True)
+    lines_with_text, referenced_files, composition = innards.extract_text_from_files(raw_lines, root_folder,
+                                                                                     delimiter_mode,
+                                                                                     ignore_preamble=True)
 
     # TODO: seeing as replace_indicators will introduce the separator instances, perhaps it makes more sense to call
     # extract_global_config first, thus keeping the objects we're dealing with as pure lists of strings for longer.
@@ -45,5 +46,5 @@ def load_manuscript_from_index_file(index_file: Path, root_folder: Path, delimit
 
     logger.info("Constructing Manuscript object.")
     original_files = [index_file] + referenced_files
-    manuscript = innards.construct_manuscript(parsed_lines, config, original_files)
+    manuscript = innards.construct_manuscript(parsed_lines, config, original_files, composition)
     return manuscript

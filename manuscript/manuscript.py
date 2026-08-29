@@ -80,6 +80,34 @@ class Manuscript:
         """
         pass
 
+    @dataclass
+    class FileContribution:
+        """A single source file that contributed text to a manuscript.
+        """
+        path: Path
+        word_count: int
+
+    @dataclass
+    class ChapterContribution:
+        """The source files that make up one chapter, in the order in which they appear.
+
+        A chapter can be made up of any number of files (including none at all, for a chapter that has been declared
+        but not yet written).
+
+        Indices are zero-based and count within their container, i.e. chapter_index counts chapters within a part.
+        Both are negative for content that lives outside of any part/chapter, which is possible for manuscripts that
+        do not use those separators at all (a short story, say).
+        """
+        part_index: int
+        part_title: str
+        chapter_index: int
+        chapter_title: str
+        files: List[Manuscript.FileContribution] = field(default_factory=list)
+
+        @property
+        def word_count(self) -> int:
+            return sum(file.word_count for file in self.files)
+
     @classmethod
     def is_control_type(cls, input) -> bool:
         """Returns whether the given string is one of the control strings this class knows about.
@@ -97,6 +125,9 @@ class Manuscript:
     content: Content
     config: Config
     original_files: List[Path] = field(default_factory=list)
+    # Describes which files made up which chapter, and how much each of them contributed. Importers that have no notion
+    # of source files (or of chapters) can leave this empty.
+    composition: List[ChapterContribution] = field(default_factory=list)
 
     def split_into_parts(self) -> List["Manuscript"]:
         """Split this Manuscript into per-Part Manuscript objects.
@@ -136,8 +167,12 @@ class Manuscript:
                                             original_cfg.time,
                                             original_cfg.scene_separator_type)
 
+            # The composition is already broken down by part, so we can just hand each part the entries that belong
+            # to it.
+            part_composition = [entry for entry in self.composition if entry.part_index == idx_i]
+
             # TODO: Part manuscripts won't have original files for now, we'd need to fish them out or hold them differently.
-            part_manuscript = Manuscript(part_content, part_config, None)
+            part_manuscript = Manuscript(part_content, part_config, None, part_composition)
             parts.append(part_manuscript)
 
         return parts

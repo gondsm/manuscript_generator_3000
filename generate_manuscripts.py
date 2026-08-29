@@ -15,8 +15,10 @@ PROCESSING:
 1. Discovers all eligible manuscript files in the root directory
 2. Generates PDF and EPUB for each manuscript in parallel
 3. Creates individual files for each part (for multi-part manuscripts)
-4. Outputs a summary with word counts and file locations
-5. Saves generation logs and summary to output directory
+4. Writes a generation summary next to each manuscript, listing the files that make up each chapter and their word
+   counts
+5. Outputs a summary with word counts and file locations
+6. Saves generation logs and summary to output directory
 """
 
 import argparse
@@ -37,6 +39,7 @@ from manuscript_generator_3000.importers import markdown_single_file_importer
 from manuscript_generator_3000.exporters import epub_exporter
 from manuscript_generator_3000.exporters import latex_pdf_exporter
 from manuscript_generator_3000.exporters import markdown_exporter
+from manuscript_generator_3000.exporters import summary_exporter
 from manuscript_generator_3000.exporters import zip_exporter
 
 # Utilities
@@ -76,8 +79,8 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def call_manuscript_exporters(manuscript, illustrations_folder: Path, manuscript_output_dir: Path, output_name: str, epub_name: str, markdown_name: str, zip_name: str) -> None:
-    """Export a manuscript to PDF, EPUB, Markdown, and original source files as ZIP."""
+def call_manuscript_exporters(manuscript, illustrations_folder: Path, manuscript_output_dir: Path, output_name: str, epub_name: str, markdown_name: str, zip_name: str, summary_name: str) -> None:
+    """Export a manuscript to PDF, EPUB, Markdown, original source files as ZIP, and a generation summary."""
     latex_pdf_exporter.export(
         manuscript,
         TEMPLATE_PATH,
@@ -100,6 +103,8 @@ def call_manuscript_exporters(manuscript, illustrations_folder: Path, manuscript
     )
 
     zip_exporter.export(manuscript, manuscript_output_dir / zip_name)
+
+    summary_exporter.export(manuscript, manuscript_output_dir / summary_name)
 
 
 def export_manuscript(file_path: Path, root_folder: Path, output_dir: Path, manuscript_type: str) -> dict:
@@ -132,6 +137,7 @@ def export_manuscript(file_path: Path, root_folder: Path, output_dir: Path, manu
     epub_name = datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%d") + " - " + file_path.stem + ".epub"
     markdown_name = datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%d") + " - " + file_path.stem + ".md"
     zip_name = datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%d") + " - " + file_path.stem + " - original_files.zip"
+    summary_name = datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%d") + " - " + file_path.stem + " - generation_summary.md"
 
     # Load manuscript based on type
     if manuscript_type == "short_fiction":
@@ -164,6 +170,7 @@ def export_manuscript(file_path: Path, root_folder: Path, output_dir: Path, manu
                 epub_name,
                 markdown_name,
                 zip_name,
+                summary_name,
             )
 
     parts_data = []
@@ -174,6 +181,7 @@ def export_manuscript(file_path: Path, root_folder: Path, output_dir: Path, manu
         part_epub_name = datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%d") + " - " + part_slug + ".epub"
         part_markdown_name = datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%d") + " - " + part_slug + ".md"
         part_zip_name = datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%d") + " - " + part_slug + " - original_files.zip"
+        part_summary_name = datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%d") + " - " + part_slug + " - generation_summary.md"
 
         part_wc = count_words_in_manuscript(part)
         parts_data.append({
@@ -191,11 +199,13 @@ def export_manuscript(file_path: Path, root_folder: Path, output_dir: Path, manu
                     part_epub_name,
                     part_markdown_name,
                     part_zip_name,
+                    part_summary_name,
                 )
 
     return {
         "index_file": file_path,
         "output_path": manuscript_output_dir,
+        "summary_file": manuscript_output_dir / summary_name,
         "word_count": manuscript_wc,
         "parts": parts_data,
         "type": manuscript_type,
@@ -227,6 +237,7 @@ def compile_summary(summaries: list) -> str:
         summary_lines.append(f"\n{index_stem}")
         summary_lines.append(f"  * Index file: {summary['index_file']}")
         summary_lines.append(f"  * Output: {summary['output_path']}")
+        summary_lines.append(f"  * Generation summary: {summary['summary_file'].name}")
         summary_lines.append(f"  * Word count: {summary['word_count']:,}")
         
         if summary["parts"]:

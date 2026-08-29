@@ -6,6 +6,7 @@ import copy
 from enum import Enum
 
 from ..manuscript import Manuscript
+from ..word_count.word_count import count_words
 
 logger = logging.getLogger(__name__)
 
@@ -168,15 +169,36 @@ def _extract_text_from_file(filename: Path, root_folder: Path, ignore_preamble: 
     return output
 
 
+def count_words_in_lines(lines: Iterable[str]) -> int:
+    """Counts the words that a sequence of raw lines contributes to a manuscript.
+
+    Lines that end up as separators (scene breaks and the like) carry no words, so they are left out, which keeps these
+    counts consistent with the ones taken from a finished Manuscript.
+    """
+    return sum([count_words(line) for line in replace_indicators(lines) if not Manuscript.is_control_type(line)])
+
+
 def extract_text_from_files(lines: Iterable[str], root_folder: Path, delimiter_mode: DelimiterMode,
-                            ignore_preamble: bool) -> tuple[Iterable[str], list[Path]]:
+                            ignore_preamble: bool) -> tuple[Iterable[str], list[Path], list[Manuscript.ChapterContribution]]:
     """Given a sequence of lines as extracted by extract_relevant_section, pull text out of the given filenames.
 
     This replaces (not in place) every reference to a filename in the lines with a sequence of lines that contain the
     text.
+
+    Returns [lines_with_text, original_files, composition], where the composition describes which files ended up in
+    which chapter, and how many words each of them contributed.
     """
     output = []
     original_files = []
+    composition = []
+
+    # We keep track of where we are in the manuscript so that every file we load can be attributed to a chapter.
+    # Everything starts out negative, as we may well come across files before any separator shows up.
+    part_index = -1
+    part_title = ""
+    chapter_index = -1
+    current_chapter = None
+
     for line in lines:
         if FILENAME_START[delimiter_mode] in line and FILENAME_END in line:
             filename = line.split(FILENAME_START[delimiter_mode])[-1].split(FILENAME_END)[0]
@@ -190,10 +212,30 @@ def extract_text_from_files(lines: Iterable[str], root_folder: Path, delimiter_m
             output.extend(text)
             original_files.append(file_path)
 
+            if current_chapter is None:
+                # Text can show up before any chapter separator does, and it still needs a home in the breakdown.
+                current_chapter = Manuscript.ChapterContribution(part_index, part_title, chapter_index, "")
+                composition.append(current_chapter)
+
+            current_chapter.files.append(Manuscript.FileContribution(file_path, count_words_in_lines(text)))
+
         else:
+            if PART_INDICATOR in line:
+                part_index += 1
+                part_title = _convert_inline_config_to_separator_config(_extract_inline_config(line)).title
+                # Chapters are numbered within their part.
+                chapter_index = -1
+                current_chapter = None
+
+            elif CHAPTER_INDICATOR in line:
+                chapter_index += 1
+                chapter_title = _convert_inline_config_to_separator_config(_extract_inline_config(line)).title
+                current_chapter = Manuscript.ChapterContribution(part_index, part_title, chapter_index, chapter_title)
+                composition.append(current_chapter)
+
             output.append(line)
 
-    return output, original_files
+    return output, original_files, composition
 
 
 def replace_indicators(lines: Iterable[str]) -> Manuscript.Content:
@@ -362,10 +404,11 @@ def _convert_config_dict_to_object(config: dict) -> Manuscript.Config:
     return Manuscript.Config(title, author, cover, time, scene_separator_type)
 
 
-def construct_manuscript(parsed_lines: Iterable[str], config: dict, original_files: list[Path] | None = None) -> Manuscript:
+def construct_manuscript(parsed_lines: Iterable[str], config: dict, original_files: list[Path] | None = None,
+                         composition: list[Manuscript.ChapterContribution] | None = None) -> Manuscript:
     """Takes a list of parsed lines and a config dict and constructs a Manuscript object.
 
     The lines MUST have been stripped of config, had any indicators replaced, etc.
     config should be in the format returned by extract_config.
     """
-    return Manuscript(parsed_lines, _convert_config_dict_to_object(config), original_files or [])
+    return Manuscript(parsed_lines, _convert_config_dict_to_object(config), original_files or [], composition or [])
